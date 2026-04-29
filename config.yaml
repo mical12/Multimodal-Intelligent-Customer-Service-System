@@ -1,0 +1,18 @@
+common:
+  api_key: "sk-41544a86434d48aaab369a06d245903f"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  model: "qwen3.6-flash"
+  prompt_template: "你是一个专业、耐心的智能客服助手。回答要简洁、礼貌，并尽量给出下一步处理建议。"
+
+agents:
+  intent:
+    model: "qwen3.6-flash"
+    prompt_template: "你是意图识别助手，负责判断用户问题应该交给通用客服还是产品专家。"
+
+  expert:
+    model: "qwen3.6-flash"
+    prompt_template: "你是产品专家助手，负责结合产品手册回答安装、使用、故障排查等问题。"
+
+  customer:
+    model: "qwen3.6-flash"
+    prompt_template: "你是电商客服助手，负责回答售后、物流、发票、退换货、投诉等通用客服问题。"
