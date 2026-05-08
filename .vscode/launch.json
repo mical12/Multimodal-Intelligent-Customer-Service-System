@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug API server",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false
+        },
+        {
+            "name": "Debug test.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test.py",
+            "args": [
+                "--batch-size",
+                "1",
+                "--output",
+                "debug_submission.csv"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": false
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug API + test.py",
+            "configurations": [
+                "Debug API server",
+                "Debug test.py"
+            ],
+            "stopAll": true
+        }
+    ]
+}

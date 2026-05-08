@@ -29,7 +29,7 @@ async def chat(req: ChatRequest):
         "content": req.message,
     })
 
-    reply = await generate_reply(sessions[user_id])
+    reply = await generate_reply(sessions[user_id], user_id=user_id)
 
     sessions[user_id].append({
         "role": "assistant",

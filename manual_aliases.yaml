@@ -1,0 +1,204 @@
+# 手册产品别名。key 必须和“手册/<产品名>手册.txt”中的产品名一致。
+# 调整 intent 命中时，优先改这里，不必改 model.py。
+VR头显:
+  - VR头显
+  - VR眼镜
+  - VR设备
+  - 头显
+  - 虚拟现实头显
+  - vr headset
+  - headset
+
+专业相机:
+  - 专业相机
+  - 单反相机
+  - 摄影相机
+  - camera
+  - professional camera
+  - lens
+  - shutter
+  - af mode
+  - eyepiece
+
+人体工学椅:
+  - 人体工学椅
+  - 椅子
+  - 办公椅
+  - 座椅
+  - 扶手
+  - ergonomic chair
+  - chair
+
+健身单车:
+  - 健身单车
+  - 单车
+  - 动感单车
+  - 运动单车
+  - 控制台
+  - exercise bike
+  - fitness bike
+
+健身追踪器:
+  - 健身追踪器
+  - 运动手环
+  - 健身手环
+  - 追踪器
+  - 表带
+  - 心率
+  - fitness tracker
+  - tracker
+
+儿童电动摩托车:
+  - 儿童电动摩托车
+  - 儿童摩托车
+  - 电动摩托车
+  - 挡泥板
+  - 前轮
+  - electric motorcycle
+  - kids electric motorcycle
+
+冰箱:
+  - 冰箱
+  - 冰柜
+  - 家电冰箱
+  - refrigerator
+  - fridge
+  - freezer
+
+功能键盘:
+  - 功能键盘
+  - 键盘
+  - 机械键盘
+  - 轴体
+  - CAM软件
+  - keyboard
+  - cam software
+
+发电机:
+  - 发电机
+  - 发动机
+  - 消音器
+  - 燃油开关
+  - 直流保护器
+  - 火花塞
+  - generator
+
+可编程温控器:
+  - 可编程温控器
+  - 温控器
+  - 恒温器
+  - 热泵
+  - 端子
+  - 接线
+  - thermostat
+  - programmable thermostat
+  - temperature controller
+
+吹风机:
+  - 吹风机
+  - 化油器
+  - 冷机
+  - 热机
+  - blower
+  - leaf blower
+
+摩托艇:
+  - 摩托艇
+  - 水上摩托
+  - 喷射艇
+  - 船
+  - 游艇
+  - 艇
+  - 滑航
+  - 拖曳速度
+  - 半滑航速度
+  - boat
+  - ship
+  - sailing
+  - jetski
+  - jet ski
+  - watercraft
+  - personal watercraft
+
+水泵:
+  - 水泵
+  - 抽水
+  - 油箱滤网
+  - pump
+  - water pump
+
+洗碗机:
+  - 洗碗机
+  - 餐具篮
+  - 碗篮
+  - 亮碟剂
+  - 洗涤剂
+  - 洗涤块
+  - dishwasher
+
+烤箱:
+  - 烤箱
+  - 烤架
+  - 烤盘
+  - 接油盘
+  - 催化侧面板
+  - oven
+  - grill
+
+电钻:
+  - 电钻
+  - 无键夹头
+  - 电池组
+  - 腰带挂钩
+  - 批头夹
+  - DCB101
+  - drill
+
+相机:
+  - 相机
+  - 即时相机
+  - 混合即时相机
+  - 相纸盒
+  - 自动打印
+  - 手动打印
+  - instant camera
+
+空气净化器:
+  - 空气净化器
+  - 净化器
+  - 空气质量指示灯
+  - 滤网
+  - 灰尘传感器
+  - air purifier
+
+空调:
+  - 空调
+  - 空调遥控器
+  - 遥控器支架
+  - 自清洁
+  - 等离子净化
+  - 节能制冷
+  - 空气滤网
+  - 3M多重防护滤网
+  - air conditioner
+  - ac
+
+蒸汽清洁机:
+  - 蒸汽清洁机
+  - 蒸汽拖把
+  - 清洁机
+  - 硬质地面
+  - steam cleaner
+
+蓝牙激光鼠标:
+  - 蓝牙激光鼠标
+  - 蓝牙鼠标
+  - 激光鼠标
+  - 鼠标
+  - WIDCOMM
+  - 快速配对
+  - 人机接口设备
+  - bluetooth laser mouse
+  - bluetooth mouse
+  - laser mouse
+  - mouse
