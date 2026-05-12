@@ -1,0 +1,3 @@
+﻿time,id,question,error_type,error_message,elapsed,status_code,response_text
+2026-05-12T15:32:51,415,"""What is the proper way to use the brake lever and brake button?""",HTTPStatusError,"Server error '500 Internal Server Error' for url 'http://127.0.0.1:8000/chat'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",77.33,500,Internal Server Error

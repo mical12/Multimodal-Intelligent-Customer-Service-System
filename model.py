@@ -1,122 +1,40 @@
+import asyncio
 import json
 import os
-import re
-from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List
 
-import yaml
 from openai import AsyncOpenAI
 
+from rag import RetrievalResult, get_default_rag
+from util import (
+    AgentConfig,
+    ChatMessage,
+    IntentResult,
+    ManualContent,
+    ManualMatch,
+    MAX_EXPERT_IMAGES,
+    build_expert_prompt,
+    build_extractive_expert_answer,
+    find_image_path,
+    get_agent_config,
+    image_path_to_data_url,
+    latest_user_message,
+    load_config,
+    load_manual_aliases,
+    load_manual_entries,
+    load_manual_sub_aliases,
+    load_manual_summaries,
+    parse_expert_json,
+    parse_json_object,
+    record_intent,
+    unique_image_names,
+    MANUAL_DIR,
+)
 
-BASE_DIR = Path(__file__).resolve().parent
-CONFIG_PATH = BASE_DIR / "config.yaml"
-MANUAL_ALIAS_PATH = BASE_DIR / "manual_aliases.yaml"
-MANUAL_SUMMARY_PATH = BASE_DIR / "manual_summaries.yaml"
-MANUAL_DIR = BASE_DIR / "手册"
-IMAGE_DIR = MANUAL_DIR / "插图"
-INTENT_LOG_PATH = BASE_DIR / "intent_log.jsonl"
+
 FIXED_TEST_REPLY = "您好，您的问题已收到，我们会尽快为您处理。"
-LLM_ROUTER_PRODUCTS = {"相机", "专业相机"}
-
-AgentType = Literal["customer", "expert"]
-ChatMessage = Dict[str, str]
-
-
-@dataclass
-class AgentConfig:
-    api_key: str = ""
-    base_url: str = ""
-    model: str = ""
-    prompt_template: str = ""
-
-
-@dataclass
-class IntentResult:
-    agent_type: AgentType
-    product_name: str | None = None
-    manual_path: Path | None = None
-    reason: str = ""
-
-
-def load_config(config_path: Path = CONFIG_PATH) -> Dict[str, Any]:
-    if not config_path.exists():
-        return {}
-
-    with config_path.open("r", encoding="utf-8") as file:
-        return yaml.safe_load(file) or {}
-
-
-def load_manual_aliases(alias_path: Path = MANUAL_ALIAS_PATH) -> Dict[str, List[str]]:
-    if not alias_path.exists():
-        return {}
-
-    with alias_path.open("r", encoding="utf-8") as file:
-        aliases = yaml.safe_load(file) or {}
-
-    return {
-        str(product_name): [str(alias) for alias in alias_list if str(alias).strip()]
-        for product_name, alias_list in aliases.items()
-        if isinstance(alias_list, list)
-    }
-
-
-def load_manual_summaries(summary_path: Path = MANUAL_SUMMARY_PATH) -> Dict[str, str]:
-    if not summary_path.exists():
-        return {}
-
-    with summary_path.open("r", encoding="utf-8") as file:
-        summaries = yaml.safe_load(file) or {}
-
-    return {
-        str(product_name): str(summary).strip()
-        for product_name, summary in summaries.items()
-        if str(summary).strip()
-    }
-
-
-def get_agent_config(config: Dict[str, Any], agent_name: str) -> AgentConfig:
-    common_config = config.get("common", {})
-    agent_config = config.get("agents", {}).get(agent_name, {})
-    merged_config = {**common_config, **agent_config}
-
-    return AgentConfig(
-        api_key=merged_config.get("api_key", ""),
-        base_url=merged_config.get("base_url", ""),
-        model=merged_config.get("model", ""),
-        prompt_template=merged_config.get("prompt_template", ""),
-    )
-
-
-def latest_user_message(history: List[ChatMessage]) -> str:
-    for message in reversed(history):
-        if message.get("role") == "user":
-            return message.get("content", "")
-    return ""
-
-
-def normalize_match_text(text: str) -> str:
-    return re.sub(r"[\W_]+", "", text.lower(), flags=re.UNICODE)
-
-
-def record_intent(
-    history: List[ChatMessage],
-    intent: IntentResult,
-    user_id: str | None = None,
-) -> None:
-    log_item = {
-        "time": datetime.now().isoformat(timespec="seconds"),
-        "user_id": user_id,
-        "question": latest_user_message(history),
-        "agent_type": intent.agent_type,
-        "product_name": intent.product_name,
-        "manual_path": str(intent.manual_path) if intent.manual_path else None,
-        "reason": intent.reason,
-    }
-
-    with INTENT_LOG_PATH.open("a", encoding="utf-8") as file:
-        file.write(json.dumps(log_item, ensure_ascii=False) + "\n")
+LLM_ROUTER_PRODUCTS = {""}
 
 
 class BaseAgent:
@@ -184,29 +102,33 @@ class IntentAgent(BaseAgent):
         super().__init__(agent_config)
         self.manual_dir = manual_dir
         self.manual_aliases = load_manual_aliases()
+        self.manual_sub_aliases = load_manual_sub_aliases()
         self.manual_summaries = load_manual_summaries()
 
     async def recognize(self, history: List[ChatMessage]) -> IntentResult:
         question = latest_user_message(history)
-        manual_path = self._match_manual(question)
+        manual_match = self._match_manual(question)
 
-        if manual_path is not None:
-            product_name = self._product_name_from_manual(manual_path)
-            if product_name not in LLM_ROUTER_PRODUCTS:
+        if manual_match is not None:
+            manual_product_name = self._product_name_from_manual(manual_match.manual_path)
+            if manual_product_name not in LLM_ROUTER_PRODUCTS:
                 return IntentResult(
                     agent_type="expert",
-                    product_name=product_name,
-                    manual_path=manual_path,
+                    product_name=manual_match.product_name,
+                    manual_path=manual_match.manual_path,
+                    manual_content=manual_match.manual_content,
+                    image_names=manual_match.image_names,
                     reason="规则命中产品手册",
                 )
 
-        llm_manual_path = await self._match_manual_with_llm(question, manual_path)
-        if llm_manual_path is not None:
-            product_name = self._product_name_from_manual(llm_manual_path)
+        llm_manual_match = await self._match_manual_with_llm(question, manual_match)
+        if llm_manual_match is not None:
             return IntentResult(
                 agent_type="expert",
-                product_name=product_name,
-                manual_path=llm_manual_path,
+                product_name=llm_manual_match.product_name,
+                manual_path=llm_manual_match.manual_path,
+                manual_content=llm_manual_match.manual_content,
+                image_names=llm_manual_match.image_names,
                 reason="大模型结合手册摘要命中产品手册",
             )
 
@@ -215,29 +137,92 @@ class IntentAgent(BaseAgent):
             reason="规则和大模型均未命中产品手册，走通用客服",
         )
 
-    def _match_manual(self, question: str) -> Path | None:
-        normalized_question = normalize_match_text(question)
-        best_match: tuple[int, Path] | None = None
+    def _match_manual(self, question: str) -> ManualMatch | None:
+        question_text = question.casefold()
+        best_match: tuple[int, ManualMatch] | None = None
 
         for manual_path in self._manual_files():
             product_name = self._product_name_from_manual(manual_path)
-            aliases = [product_name, *self.manual_aliases.get(product_name, [])]
 
+            if product_name in self.manual_sub_aliases:
+                for sub_product_name, sub_aliases in self.manual_sub_aliases[product_name].items():
+                    aliases = [sub_product_name, *sub_aliases]
+                    for alias in aliases:
+                        alias_text = str(alias).strip().casefold()
+                        if not alias_text or alias_text not in question_text:
+                            continue
+                        manual_content = self._manual_content_by_sub_product(
+                            manual_path,
+                            product_name,
+                            sub_product_name,
+                        )
+                        if manual_content is None:
+                            continue
+                        manual_match = ManualMatch(
+                            product_name=sub_product_name,
+                            manual_path=manual_path,
+                            manual_content=manual_content.content,
+                            image_names=manual_content.image_names,
+                        )
+                        alias_length = len(alias_text)
+                        if best_match is None or alias_length > best_match[0]:
+                            best_match = (alias_length, manual_match)
+                continue
+
+            aliases = [product_name, *self.manual_aliases.get(product_name, [])]
             for alias in aliases:
-                normalized_alias = normalize_match_text(alias)
-                if not normalized_alias or normalized_alias not in normalized_question:
+                alias_text = str(alias).strip().casefold()
+                if not alias_text or alias_text not in question_text:
                     continue
-                alias_length = len(normalized_alias)
+                manual_content = self._manual_content_by_index(manual_path, 0)
+                if manual_content is None:
+                    continue
+                manual_match = ManualMatch(
+                    product_name=product_name,
+                    manual_path=manual_path,
+                    manual_content=manual_content.content,
+                    image_names=manual_content.image_names,
+                )
+                alias_length = len(alias_text)
                 if best_match is None or alias_length > best_match[0]:
-                    best_match = (alias_length, manual_path)
+                    best_match = (alias_length, manual_match)
 
         return best_match[1] if best_match else None
+
+    def _manual_content_by_sub_product(
+        self,
+        manual_path: Path,
+        product_name: str,
+        sub_product_name: str,
+    ) -> ManualContent | None:
+        sub_product_names = list(self.manual_sub_aliases.get(product_name, {}).keys())
+        try:
+            entry_index = sub_product_names.index(sub_product_name)
+        except ValueError:
+            return None
+
+        return self._manual_content_by_index(manual_path, entry_index)
+
+    def _manual_content_by_index(
+        self,
+        manual_path: Path,
+        entry_index: int,
+    ) -> ManualContent | None:
+        entries = self._load_manual_entries(manual_path)
+        if entry_index >= len(entries):
+            return None
+
+        return entries[entry_index]
+
+    def _load_manual_entries(self, manual_path: Path) -> List[ManualContent]:
+        return load_manual_entries(manual_path)
 
     async def _match_manual_with_llm(
         self,
         question: str,
-        rule_manual_path: Path | None = None,
-    ) -> Path | None:
+        rule_manual_match: ManualMatch | None = None,
+    ) -> ManualMatch | None:
+        rule_manual_path = rule_manual_match.manual_path if rule_manual_match else None
         manual_options = self._manual_options_for_llm(rule_manual_path)
         if not manual_options:
             return None
@@ -245,14 +230,19 @@ class IntentAgent(BaseAgent):
         system_prompt = (
             "你是电商客服系统的产品手册路由器。"
             "请根据用户问题和每本手册摘要，判断问题是否应该交给某一本产品手册处理。"
-            "如果问题是售后、物流、发票、退换货、投诉等通用客服问题，返回 customer。"
+            "如果问题属于英文汇总手册中的某个产品，manual_name 必须返回英文汇总，"
+            "product_name 必须返回英文汇总手册中对应产品的准确名称。"
+            "如果问题是售后、物流、发票、退换货、投诉等通用客服问题，问题没有明确产品线索，即使提到 troubleshooting、safety、maintenance，返回 customer。"
             "只输出 JSON，不要输出解释。"
         )
         user_prompt = (
             f"用户问题：{question}\n\n"
             "可选产品手册摘要：\n"
             f"{manual_options}\n\n"
-            '输出格式：{"agent_type":"expert或customer","product_name":"产品名或null"}'
+            "英文汇总中的 product_name 只能从这些名称中选择："
+            f"{', '.join(self.manual_sub_aliases.get('英文汇总', {}).keys())}\n\n"
+            '输出格式：{"agent_type":"expert或customer","manual_name":"手册名或null",'
+            '"product_name":"产品名或null"}'
         )
 
         try:
@@ -271,11 +261,52 @@ class IntentAgent(BaseAgent):
         if result.get("agent_type") != "expert":
             return None
 
+        manual_name = str(result.get("manual_name") or "").strip()
         product_name = str(result.get("product_name") or "").strip()
-        if not product_name:
+        if not manual_name and not product_name:
             return None
 
-        return self._manual_path_by_product_name(product_name)
+        if not manual_name and product_name in self.manual_sub_aliases.get("英文汇总", {}):
+            manual_name = "英文汇总"
+
+        if manual_name == "英文汇总":
+            if not product_name:
+                return None
+            manual_path = self._manual_path_by_product_name(manual_name)
+            if manual_path is None:
+                return None
+            manual_content = self._manual_content_by_sub_product(
+                manual_path,
+                manual_name,
+                product_name,
+            )
+            if manual_content is None:
+                return None
+            return ManualMatch(
+                product_name=product_name,
+                manual_path=manual_path,
+                manual_content=manual_content.content,
+                image_names=manual_content.image_names,
+            )
+
+        lookup_name = manual_name or product_name
+        manual_path = self._manual_path_by_product_name(lookup_name)
+        if manual_path is None and product_name:
+            manual_path = self._manual_path_by_product_name(product_name)
+            lookup_name = product_name
+        if manual_path is None:
+            return None
+
+        manual_content = self._manual_content_by_index(manual_path, 0)
+        if manual_content is None:
+            return None
+
+        return ManualMatch(
+            product_name=product_name or lookup_name,
+            manual_path=manual_path,
+            manual_content=manual_content.content,
+            image_names=manual_content.image_names,
+        )
 
     def _manual_options_for_llm(self, rule_manual_path: Path | None = None) -> str:
         manual_files = self._manual_files()
@@ -300,16 +331,7 @@ class IntentAgent(BaseAgent):
 
     @staticmethod
     def _parse_llm_router_result(content: str) -> Dict[str, Any]:
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", content, flags=re.S)
-            if not match:
-                return {}
-            try:
-                return json.loads(match.group(0))
-            except json.JSONDecodeError:
-                return {}
+        return parse_json_object(content)
 
     def _manual_path_by_product_name(self, product_name: str) -> Path | None:
         for manual_path in self._manual_files():
@@ -325,7 +347,6 @@ class IntentAgent(BaseAgent):
         return [
             path
             for path in self.manual_dir.glob("*手册.txt")
-            if path.name != "汇总英文手册.txt"
         ]
 
     @staticmethod
@@ -334,15 +355,113 @@ class IntentAgent(BaseAgent):
 
 
 class ExpertAgent(BaseAgent):
-    """Handle product manual questions. RAG and image retrieval will be added here later."""
+    """Handle product manual questions with RAG context and matched images."""
 
     async def reply(self, history: List[ChatMessage], intent: IntentResult) -> str:
-        product_name = intent.product_name or "相关产品"
-        return (
-            f"已识别为【{product_name}】相关问题，后续这里会接入专家 agent："
-            "先检索对应手册，再结合历史会话和需要匹配插图。"
+        if intent.manual_path is None:
+            return await self._fallback_expert_reply(history, intent)
+
+        question = latest_user_message(history)
+        results = await asyncio.to_thread(
+            self._retrieve_manual_context,
+            question,
+            intent,
+        )
+        if not results:
+            return await self._fallback_expert_reply(history, intent)
+
+        image_names = unique_image_names(results)
+        messages = self._expert_messages(history, intent, results, image_names)
+
+        try:
+            completion = await self._client().chat.completions.create(
+                model=self.model,
+                messages=messages,
+            )
+            content = completion.choices[0].message.content or ""
+        except Exception:
+            return self._format_expert_reply(
+                build_extractive_expert_answer(results),
+                image_names[:MAX_EXPERT_IMAGES],
+            )
+
+        answer, selected_images = parse_expert_json(content)
+        selected_images = [
+            image_name
+            for image_name in selected_images
+            if image_name in image_names
+        ]
+        if not selected_images:
+            selected_images = image_names[:MAX_EXPERT_IMAGES]
+
+        return self._format_expert_reply(answer, selected_images)
+
+    def _retrieve_manual_context(
+        self,
+        question: str,
+        intent: IntentResult,
+    ) -> List[RetrievalResult]:
+        return get_default_rag().retrieve(
+            question=question,
+            manual_path=intent.manual_path,
+            product_name=intent.product_name,
+            top_k=3,
+            neighbor_count=1,
         )
 
+    def _expert_messages(
+        self,
+        history: List[ChatMessage],
+        intent: IntentResult,
+        results: List[RetrievalResult],
+        image_names: List[str],
+    ) -> List[Dict[str, Any]]:
+        system_prompt = self.prompt_template or (
+            "你是产品手册专家助手，必须只根据给定手册片段回答。"
+        )
+        text_prompt = build_expert_prompt(history, intent, results, image_names)
+        content: List[Dict[str, Any]] = [
+            {"type": "text", "text": text_prompt},
+        ]
+
+        for image_name in image_names[:MAX_EXPERT_IMAGES]:
+            image_path = find_image_path(image_name)
+            if image_path is None:
+                continue
+            content.append({"type": "text", "text": f"图片名称：{image_name}"})
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_path_to_data_url(image_path),
+                    },
+                }
+            )
+
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": content},
+        ]
+
+    async def _fallback_expert_reply(
+        self,
+        history: List[ChatMessage],
+        intent: IntentResult,
+    ) -> str:
+        system_prompt = self.prompt_template or "你是产品手册专家助手。"
+        extra_user_context = (
+            f"产品：{intent.product_name or '相关产品'}\n"
+            "当前没有可用的手册检索结果，请基于历史会话给出谨慎、简洁的回复。"
+        )
+        answer = await self._chat_with_history(history, system_prompt, extra_user_context)
+        return self._format_expert_reply(answer, [])
+
+    @staticmethod
+    def _format_expert_reply(answer: str, image_names: List[str]) -> str:
+        answer = (answer or "").strip()
+        if not answer:
+            answer = "请参考以下手册片段处理该问题。"
+        return f"{json.dumps(answer, ensure_ascii=False)}, {json.dumps(image_names, ensure_ascii=False)}"
 
 class CustomerAgent(BaseAgent):
     """Handle general customer-service questions."""
@@ -385,9 +504,7 @@ async def generate_reply(
 ) -> str:
     intent = await intent_agent.recognize(history)
     record_intent(history, intent, user_id)
-    # if intent.agent_type == "expert":
-    #    return await expert_agent.reply(history, intent)
+    if intent.agent_type == "expert":
+       return await expert_agent.reply(history, intent)
 
-    # return await customer_agent.reply(history, intent)
-
-    return FIXED_TEST_REPLY
+    return await customer_agent.reply(history, intent)

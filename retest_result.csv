@@ -1,0 +1,11 @@
+﻿id,question,mode,status,elapsed,agent_type,product_name,manual_name,ret,error
+67,"""吹风机冷机时，该如何启动？""",http,error,300.00,,,,,ReadTimeout: 
+90,"""椅子的扶手使用一段时间后为什么会松动？""",http,error,300.01,,,,,ReadTimeout: 
+98,"""哪些物品不适合在洗碗机中清洗？""",http,error,300.01,,,,,ReadTimeout: 
+105,"""如何安装空气净化器的脚轮？""",http,error,300.01,,,,,ReadTimeout: 
+109,"""如何清洁空气净化器的滤网？""",http,error,300.01,,,,,ReadTimeout: 
+114,"""启动健身单车前，我需要做什么？""",http,error,300.01,,,,,ReadTimeout: 
+131,"""购买健身追踪器后，包装盒里应该有什么？""",http,error,300.00,,,,,ReadTimeout: 
+132,"""我刚发现健身追踪器电量低，该如何正确为其充电？""",http,error,300.01,,,,,ReadTimeout: 
+228,"""如何为混合即时相机安装肩带？""",http,error,300.01,,,,,ReadTimeout: 
+293,"""How can I erase all images from my camera if I don't like these.""",http,error,300.01,,,,,ReadTimeout: 

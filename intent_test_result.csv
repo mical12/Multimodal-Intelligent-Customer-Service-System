@@ -1,0 +1,8 @@
+﻿id,question,agent_type,product_name,manual_path,manual_content_length,image_count,first_images,reason
+1,How can you set the jumpers of a motherboard?,expert,Motherboard,英文汇总手册.txt,117362,99,"Manual25_0, Manual25_1, Manual25_2, Manual25_3, Manual25_4",规则命中产品手册
+2,What is a V-BeltHolder?,expert,Snowmobile,英文汇总手册.txt,84507,256,"Manual34_0, Manual34_1, Manual34_2, Manual34_3, Manual34_4",规则命中产品手册
+3,What are the steps to properly connect and set up an outdoor antenna for optimal signal reception?,expert,Color Television,英文汇总手册.txt,32390,52,"Manual35_0, Manual35_1, Manual35_2, Manual35_3, Manual35_4",规则命中产品手册
+4,How to change the default setting of the energy saving mode?,expert,Espresso,英文汇总手册.txt,16812,50,"Manual07_0, Manual07_1, Manual07_2, Manual07_3, Manual07_4",规则命中产品手册
+5,How can you use the washer drain hose?,expert,Washing Machine,英文汇总手册.txt,8212,38,"Manual39_0, Manual39_1, washing_machine1_02, washing_machine1_01, Manual39_2",规则命中产品手册
+6,如何使用蒸汽清洁机安装延长管？,expert,蒸汽清洁机,蒸汽清洁机手册.txt,3359,17,"Manual05_0, Manual05_1, Manual05_2, Manual05_3, Manual05_4",规则命中产品手册
+7,请问你们家的商品支持7天无理由退换货吗？,customer,,,0,0,,规则和大模型均未命中产品手册，走通用客服

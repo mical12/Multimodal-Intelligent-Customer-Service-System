@@ -1,7 +1,28 @@
 # 每本手册的简短摘要，供 intent 规则无法判断时交给大模型做路由。
 # key 必须和“手册/<产品名>手册.txt”中的产品名一致。
 VR头显: "VR头显/虚拟现实设备手册，包含耳机/耳塞、遮光罩清洁、游玩区域尺寸、VR设备安全预防、使用维护等内容。"
-专业相机: "专业数码相机/单反相机手册，包含电池充电、镜头安装、CF卡、快门按钮、AF模式、对焦、曝光、白平衡、ISO、闪光、取景器、图像回放、删除照片、连接电视、相机安全维护等内容。"
+英文汇总: >
+  英文汇总手册，包含多本英文产品说明书内容，每款产品都可能对应独立的图片编号和操作步骤。
+  Digital, single-lens reflex, AF/AE camera手册，是一款数码单反相机/专业相机的说明书，包含电池充电、安装电池、使用电源适配器、安装/拆卸镜头、CF Card、快门按钮、Mode Dial、AF Mode、AF Point、Metering、Drive Mode、ISO、White Balance、Exposure、Flash、Image Playback、Direct Printing、DPOF、Custom Functions、Troubleshooting 和相机配件等内容。
+  Espresso手册，是一款胶囊咖啡机/浓缩咖啡机的说明书，包含安全注意事项、overview、energy saving mode、first use、coffee preparation、programming water volume、emptying the system、frost protection、factory reset、descaling、cleaning 和 troubleshooting 等内容。
+  Airfryer手册，是一款空气炸锅的说明书，包含安全警告、NutriU App、food table、airfrying、keep warm mode、preset、recipe、home-made fries、cleaning、storage、factory reset 和 troubleshooting 等内容。
+  2021 Boat 210FSH SPORT 210FSH DELUXE手册，是一款船艇/运动船的用户操作说明书，包含安全信息、on board 设备、fire extinguisher、燃油/发动机/电气系统、操作前检查、驾驶、维护、储存、故障排除和规格等内容。
+  2005 WaveRunner手册，是一款水上摩托/WaveRunner的用户操作说明书，包含水上摩托安全、控制部件、登艇、航行、拖曳、清洁维护、运输储存、故障排除和规格等内容。
+  MFC-J6955DW手册，是一款传真/打印/扫描一体机的产品安全说明书，包含产品安全、纸张和墨盒、扫描、传真、打印、接口、网络、维护和故障排除等内容。
+  Active Noise Canceling Truly Wireless Earphones手册，是一款主动降噪真无线耳机的说明书，包含耳塞、charging case、Bluetooth connection、配对、充电、佩戴、按键控制、声音播放和故障排除等内容。
+  E Reader手册，是一款电子阅读器的说明书，包含开关机、充电、屏幕操作、阅读、听音乐、连接电脑、文件管理、设置和故障排除等内容。
+  Grill手册，是一款户外燃气烧烤炉的使用与保养说明书，包含燃气安全、组装、点火、烹饪、清洁维护、泄漏检查、储存和故障排除等内容。
+  Snowmobile手册，是一款雪地车的操作维护说明书，包含安全驾驶、控制部件、发动机、belt、V-BeltHolder/V-Belt Holder、保养、存放、故障排除和规格等内容。
+  Color Television手册，是一款彩色电视机的用户说明书，包含安全注意事项、安装连接、outdoor antenna、CATV cable、manual program、channel memory、favorite channel、声音/图像设置、遥控器、故障排除和规格等内容。
+  VACUUM手册，是一款吸尘器/机器人吸尘设备的说明书，包含安装、充电、清扫模式、尘盒/滤网清洁、维护、故障排除和配件等内容。
+  Camera Installation Guide手册，是一款网络监控摄像头的安装指南，包含安装位置、布线、网络连接、摄像头设置、画面/音频/报警、维护和故障排除等内容。
+  Toothbrush手册，是一款电动牙刷的说明书，包含刷头、BrushSync、刷牙模式、强度设置、压力传感、scrubbing feedback、App 连接、旅行盒充电、清洁维护和故障排除等内容。
+  Washing Machine手册，是一款洗衣机的用户说明书，包含 washtub、wash timer、spin dryer、washing procedure、rinse、drain hose、lint filter、排水、脱水、清洁维护和 troubleshooting，并对应 washing_machine 插图。
+  MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE手册，是一款多功能压力锅和空气炸锅一体设备的说明书，包含压力烹饪、空气炸、配件、控制面板、烹饪程序、安全操作、清洁和故障排除等内容。
+  Over-the-Range Microwave手册，是一款嵌入式/炉灶上方微波炉的使用保养说明书，包含安装、通风、控制面板、加热/解冻/烹饪程序、滤网和灯泡维护、清洁、安全警告和故障排除等内容。
+  Motherboard手册，是一款电脑主板的硬件安装与 BIOS 设置说明书，包含 motherboard overview、CPU 安装、system memory、PCI Express 3.0 x16 slots、jumpers、rear panel connectors、SATA ODD & USB devices install operating system、RAID、BIOS update、onboard LED、TPM connector、Serial port connector、T_SENSOR thermal sensor connector 和机箱固定等内容。
+  XL490 XL495手册，是一款座机/无绳电话的用户说明书，包含安装、听筒/底座、拨号、来电、通讯录、铃声、留言、设置和故障排除等内容。
+  Riding lawn mower手册，是一款骑乘式割草机的操作维护说明书，包含安全操作、组装、启动停机、割草高度、刀片、燃油/机油、清洁维护、储存和故障排除等内容。
 人体工学椅: "人体工学椅手册，包含椅子部件、组装步骤、扶手和座椅调节、使用功能、松动维护等内容。"
 健身单车: "健身单车手册，包含技术规格、启动前检查、控制台和显示功能、座椅/把手调节、预设运动程序、用户档案、目标心率、体能测试等内容。"
 健身追踪器: "健身追踪器/运动手环手册，包含包装清单、充电、佩戴位置、表带安装拆卸、界面操作、手机通知、皮肤温度、运动分析、心率、支付、锁屏和故障排除等内容。"
@@ -11,7 +32,7 @@ VR头显: "VR头显/虚拟现实设备手册，包含耳机/耳塞、遮光罩�
 发电机: "发电机手册，包含燃油安全、发动机和消音器安全、触电防护、燃油开关、燃油和机油检查、发动机启动停机、交流/直流连接、火花塞、空气滤清器、排空燃油和故障排除等内容。"
 可编程温控器: "可编程温控器/恒温器手册，包含设置日期时间、系统和风扇模式、程序日程、临时温度调整、警报界面、热泵接线、端子不匹配处理、更换电池、故障排除等内容。"
 吹风机: "吹风机/吹叶机手册，包含防护装备、安全操作、化油器调节、冷机启动、热机启动、关闭设备等内容。"
-摩托艇: "摩托艇/水上摩托/jetski/boat手册，包含识别信息、航行限制、操作要求、水上规则、座椅和引擎开关、油门/操纵杆、QSTS、燃油表、登艇、转弯、滑航、拖曳、碰撞防护、清洁和维护等内容。"
+摩托艇: "摩托艇/水上摩托手册，包含识别信息、航行限制、操作要求、水上规则、座椅和引擎开关、油门/操纵杆、QSTS、燃油表、登艇、转弯、滑航、拖曳、碰撞防护、清洁和维护等内容。"
 水泵: "水泵手册，包含发动机安全停机、核心部件、油箱滤网清洗、排放燃油、无法抽水的原因诊断和解决等内容。"
 洗碗机: "洗碗机手册，包含部件、排水口连接、添加专用盐/洗涤剂/洗涤块/亮碟剂、餐具篮安装、高度调节、滤网和喷淋臂清洁、不适合清洗的物品等内容。"
 烤箱: "烤箱手册，包含烤箱门拆装、顶部加热元件、后部灯更换、接油盘、烤架、烤盘、油脂过滤器、滑动搁架、催化侧面板和外部清洁等内容。"
