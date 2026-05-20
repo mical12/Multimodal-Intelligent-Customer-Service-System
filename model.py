@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import os
 from pathlib import Path
@@ -6,7 +6,14 @@ from typing import Any, Dict, List
 
 from openai import AsyncOpenAI
 
-from rag import RetrievalResult, get_default_rag
+from rag import (
+    MANUAL_DIR as RAG_MANUAL_DIR,
+    RetrievalResult,
+    cosine_similarity,
+    get_default_rag,
+    product_name_from_manual,
+    warmup_targets,
+)
 from util import (
     AgentConfig,
     ChatMessage,
@@ -15,6 +22,7 @@ from util import (
     ManualMatch,
     MAX_EXPERT_IMAGES,
     build_expert_prompt,
+    build_image_label_map,
     build_extractive_expert_answer,
     find_image_path,
     get_agent_config,
@@ -25,8 +33,10 @@ from util import (
     load_manual_entries,
     load_manual_sub_aliases,
     load_manual_summaries,
+    normalize_answer_pic_tags,
     parse_expert_json,
     parse_json_object,
+    record_expert_response,
     record_intent,
     unique_image_names,
     MANUAL_DIR,
@@ -35,6 +45,12 @@ from util import (
 
 FIXED_TEST_REPLY = "您好，您的问题已收到，我们会尽快为您处理。"
 LLM_ROUTER_PRODUCTS = {""}
+MAX_EXPERT_MODEL_RETRIES = 3
+GLOBAL_RAG_INDEXES: list[dict[str, Any]] | None = None
+LANGUAGE_SYSTEM_RULE = (
+    "请始终根据用户最新问题的语言回答：中文问题必须用中文回答，"
+    "英文问题必须用英文回答。不要因为手册片段、历史会话或示例的语言改变回答语言。"
+)
 
 
 class BaseAgent:
@@ -95,6 +111,7 @@ class BaseAgent:
         return completion.choices[0].message.content or ""
 
 
+
 class IntentAgent(BaseAgent):
     """Decide whether a conversation should be handled by customer service or an expert."""
 
@@ -104,6 +121,14 @@ class IntentAgent(BaseAgent):
         self.manual_aliases = load_manual_aliases()
         self.manual_sub_aliases = load_manual_sub_aliases()
         self.manual_summaries = load_manual_summaries()
+        agent_settings = load_config().get("agents", {}).get("intent", {})
+        self.routing_mode = str(agent_settings.get("routing_mode", "summary")).strip().lower()
+        rag_settings = agent_settings.get("global_rag_assist", {})
+        self.global_rag_enabled = bool(rag_settings.get("enabled", False))
+        self.global_rag_manual_count = int(rag_settings.get("manual_count", 10))
+        self.global_rag_snippets_per_manual = int(rag_settings.get("snippets_per_manual", 2))
+        self.global_rag_top_k = int(rag_settings.get("global_top_k", 80))
+        self.global_rag_max_chars = int(rag_settings.get("snippet_max_chars", 420))
 
     async def recognize(self, history: List[ChatMessage]) -> IntentResult:
         question = latest_user_message(history)
@@ -121,20 +146,32 @@ class IntentAgent(BaseAgent):
                     reason="规则命中产品手册",
                 )
 
-        llm_manual_match = await self._match_manual_with_llm(question, manual_match)
-        if llm_manual_match is not None:
-            return IntentResult(
-                agent_type="expert",
-                product_name=llm_manual_match.product_name,
-                manual_path=llm_manual_match.manual_path,
-                manual_content=llm_manual_match.manual_content,
-                image_names=llm_manual_match.image_names,
-                reason="大模型结合手册摘要命中产品手册",
-            )
+        if self.routing_mode == "global_rag":
+            rag_manual_match = await self._match_manual_with_global_rag(question)
+            if rag_manual_match is not None:
+                return IntentResult(
+                    agent_type="expert",
+                    product_name=rag_manual_match.product_name,
+                    manual_path=rag_manual_match.manual_path,
+                    manual_content=rag_manual_match.manual_content,
+                    image_names=rag_manual_match.image_names,
+                    reason="全局RAG候选片段辅助命中产品手册",
+                )
+        else:
+            llm_manual_match = await self._match_manual_with_llm(question, manual_match)
+            if llm_manual_match is not None:
+                return IntentResult(
+                    agent_type="expert",
+                    product_name=llm_manual_match.product_name,
+                    manual_path=llm_manual_match.manual_path,
+                    manual_content=llm_manual_match.manual_content,
+                    image_names=llm_manual_match.image_names,
+                    reason="大模型结合手册摘要命中产品手册",
+                )
 
         return IntentResult(
             agent_type="customer",
-            reason="规则和大模型均未命中产品手册，走通用客服",
+            reason=f"规则和{self.routing_mode}模式均未命中产品手册，走通用客服",
         )
 
     def _match_manual(self, question: str) -> ManualMatch | None:
@@ -217,6 +254,242 @@ class IntentAgent(BaseAgent):
     def _load_manual_entries(self, manual_path: Path) -> List[ManualContent]:
         return load_manual_entries(manual_path)
 
+    async def warmup_global_rag(self) -> None:
+        if self.routing_mode != "global_rag":
+            return
+        if not self.global_rag_enabled:
+            return
+        await asyncio.to_thread(self._global_rag_indexes)
+
+    async def _match_manual_with_global_rag(self, question: str) -> ManualMatch | None:
+        if not self.global_rag_enabled:
+            return None
+        if self._skip_global_rag_for_customer_question(question):
+            return None
+
+        candidates = await asyncio.to_thread(self._global_rag_candidates, question)
+        if not candidates:
+            return None
+
+        result = await self._classify_global_rag_candidates(question, candidates)
+        if result.get("agent_type") != "expert":
+            return None
+
+        labels = [candidate["label"] for candidate in candidates]
+        product_name = self._normalize_candidate_product_name(
+            str(result.get("product_name") or ""),
+            labels,
+        )
+        if not product_name:
+            return None
+
+        return self._manual_match_for_product_name(product_name)
+
+    def _global_rag_candidates(self, question: str) -> list[dict[str, Any]]:
+        results = self._global_retrieve(question, self.global_rag_top_k)
+        by_label: dict[str, list[RetrievalResult]] = {}
+        for label, result in results:
+            by_label.setdefault(label, []).append(result)
+
+        ranked = []
+        for label, label_results in by_label.items():
+            sorted_results = sorted(label_results, key=lambda item: item.score, reverse=True)
+            top_scores = [item.score for item in sorted_results[:3]]
+            if not top_scores:
+                continue
+            ranked.append(
+                {
+                    "label": label,
+                    "max_score": max(top_scores),
+                    "avg_score": sum(top_scores) / len(top_scores),
+                    "results": sorted_results,
+                }
+            )
+
+        ranked.sort(key=lambda item: (-item["avg_score"], -item["max_score"], item["label"]))
+        candidates = []
+        for item in ranked[: self.global_rag_manual_count]:
+            snippets = []
+            for result in item["results"][: self.global_rag_snippets_per_manual]:
+                snippets.append(
+                    {
+                        "score": result.score,
+                        "text": self._normalize_rag_text(result.chunk.text),
+                    }
+                )
+            candidates.append(
+                {
+                    "label": item["label"],
+                    "max_score": item["max_score"],
+                    "avg_score": item["avg_score"],
+                    "snippets": snippets,
+                }
+            )
+        return candidates
+
+    def _global_retrieve(self, question: str, top_k: int) -> list[tuple[str, RetrievalResult]]:
+        rag = get_default_rag()
+        question_vector = rag._encode_query(question)
+        best: list[tuple[str, RetrievalResult]] = []
+
+        for index in self._global_rag_indexes():
+            best_by_chunk: dict[int, RetrievalResult] = {}
+            for chunk_index, document_vector in zip(
+                index["document_chunk_indexes"],
+                index["document_vectors"],
+            ):
+                chunk = index["chunks"][chunk_index]
+                score = cosine_similarity(question_vector, document_vector)
+                current = best_by_chunk.get(chunk_index)
+                if current is None or score > current.score:
+                    best_by_chunk[chunk_index] = RetrievalResult(chunk=chunk, score=score)
+            best.extend((index["label"], result) for result in best_by_chunk.values())
+
+        return sorted(best, key=lambda item: item[1].score, reverse=True)[:top_k]
+
+    @staticmethod
+    def _global_rag_indexes() -> list[dict[str, Any]]:
+        global GLOBAL_RAG_INDEXES
+        if GLOBAL_RAG_INDEXES is not None:
+            return GLOBAL_RAG_INDEXES
+
+        rag = get_default_rag()
+        indexes: list[dict[str, Any]] = []
+        for manual_path, product_name in warmup_targets(RAG_MANUAL_DIR):
+            index = rag.load_or_build_index(manual_path, product_name=product_name)
+            indexes.append(
+                {
+                    "manual_path": manual_path,
+                    "product_name": product_name,
+                    "label": product_name or product_name_from_manual(manual_path),
+                    "chunks": index["chunks"],
+                    "document_chunk_indexes": index["document_chunk_indexes"],
+                    "document_vectors": index["document_vectors"],
+                }
+            )
+        GLOBAL_RAG_INDEXES = indexes
+        return indexes
+
+    def _normalize_rag_text(self, text: str) -> str:
+        return " ".join(text.replace("<PIC>", " ").split())[: self.global_rag_max_chars]
+
+    async def _classify_global_rag_candidates(
+        self,
+        question: str,
+        candidates: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        system_prompt = (
+            "你是产品手册路由器。请根据用户问题和全局RAG候选片段判断是否应交给产品手册专家。"
+            "只要候选片段能直接回答手册类问题，就选择对应产品手册；"
+            "只有售后、物流、发票、退换货、投诉等非手册问题，或候选证据明显无关时，才返回customer。"
+            "product_name必须精确使用候选手册名，不要附加分数或解释。只输出JSON。"
+        )
+        prompt_lines = [
+            f"用户问题：{question}",
+            "",
+            "全局RAG候选手册与片段：",
+        ]
+        for index, candidate in enumerate(candidates, start=1):
+            prompt_lines.append(
+                f"{index}. {candidate['label']} "
+                f"(avg={candidate['avg_score']:.4f}, max={candidate['max_score']:.4f})"
+            )
+            for snippet_index, snippet in enumerate(candidate["snippets"], start=1):
+                prompt_lines.append(
+                    f"   片段{snippet_index} score={snippet['score']:.4f}: {snippet['text']}"
+                )
+        prompt_lines.extend(
+            [
+                "",
+                '输出JSON：{"agent_type":"expert或customer","product_name":"候选手册名或null","reason":"简短原因"}',
+            ]
+        )
+
+        try:
+            completion = await self._client().chat.completions.create(
+                model=self.model,
+                temperature=0,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": "\n".join(prompt_lines)},
+                ],
+            )
+        except Exception:
+            return {}
+
+        return parse_json_object(completion.choices[0].message.content or "")
+
+    @staticmethod
+    def _normalize_candidate_product_name(product_name: str, labels: list[str]) -> str:
+        name = str(product_name or "").strip()
+        if not name or name.lower() == "null":
+            return ""
+        for label in labels:
+            if name == label:
+                return label
+        for label in sorted(labels, key=len, reverse=True):
+            if label and label in name:
+                return label
+        return ""
+
+    def _manual_match_for_product_name(self, product_name: str) -> ManualMatch | None:
+        for manual_path in self._manual_files():
+            manual_name = self._product_name_from_manual(manual_path)
+            if product_name == manual_name:
+                manual_content = self._manual_content_by_index(manual_path, 0)
+                if manual_content is None:
+                    return None
+                return ManualMatch(
+                    product_name=product_name,
+                    manual_path=manual_path,
+                    manual_content=manual_content.content,
+                    image_names=manual_content.image_names,
+                )
+
+            if product_name in self.manual_sub_aliases.get(manual_name, {}):
+                manual_content = self._manual_content_by_sub_product(
+                    manual_path,
+                    manual_name,
+                    product_name,
+                )
+                if manual_content is None:
+                    return None
+                return ManualMatch(
+                    product_name=product_name,
+                    manual_path=manual_path,
+                    manual_content=manual_content.content,
+                    image_names=manual_content.image_names,
+                )
+
+        return None
+
+    @staticmethod
+    def _skip_global_rag_for_customer_question(question: str) -> bool:
+        text = question.casefold()
+        customer_markers = [
+            "纸质版说明书",
+            "电子版在哪里",
+            "电子版说明书",
+            "生产日期",
+            "出厂日期",
+            "保修",
+            "终身维修",
+            "维修服务",
+            "售后",
+            "物流",
+            "快递",
+            "运费",
+            "发票",
+            "退货",
+            "换货",
+            "退款",
+            "投诉",
+            "订单",
+            "库存",
+            "价格",
+        ]
+        return any(marker in text for marker in customer_markers)
+
     async def _match_manual_with_llm(
         self,
         question: str,
@@ -232,7 +505,6 @@ class IntentAgent(BaseAgent):
             "请根据用户问题和每本手册摘要，判断问题是否应该交给某一本产品手册处理。"
             "如果问题属于英文汇总手册中的某个产品，manual_name 必须返回英文汇总，"
             "product_name 必须返回英文汇总手册中对应产品的准确名称。"
-            "如果问题是售后、物流、发票、退换货、投诉等通用客服问题，问题没有明确产品线索，即使提到 troubleshooting、safety、maintenance，返回 customer。"
             "只输出 JSON，不要输出解释。"
         )
         user_prompt = (
@@ -371,29 +643,60 @@ class ExpertAgent(BaseAgent):
             return await self._fallback_expert_reply(history, intent)
 
         image_names = unique_image_names(results)
-        messages = self._expert_messages(history, intent, results, image_names)
-
-        try:
-            completion = await self._client().chat.completions.create(
+        raw_content, candidate_image_names, error_text = await self._call_expert_model_with_retry(
+            history=history,
+            intent=intent,
+            results=results,
+            image_names=image_names,
+        )
+        if not raw_content.strip():
+            if error_text:
+                print(f"expert model call failed: {error_text}")
+            final_answer = build_extractive_expert_answer(results)
+            final_image_names = candidate_image_names[:MAX_EXPERT_IMAGES]
+            record_expert_response(
+                history=history,
+                intent=intent,
                 model=self.model,
-                messages=messages,
+                retrieval_results=results,
+                candidate_image_names=candidate_image_names,
+                raw_content=error_text or "Empty expert response",
+                parsed_answer="",
+                parsed_image_names=[],
+                final_answer=final_answer,
+                final_image_names=final_image_names,
+                user_id=None,
             )
-            content = completion.choices[0].message.content or ""
-        except Exception:
-            return self._format_expert_reply(
-                build_extractive_expert_answer(results),
-                image_names[:MAX_EXPERT_IMAGES],
-            )
+            return self._format_expert_reply(final_answer, final_image_names)
 
-        answer, selected_images = parse_expert_json(content)
+        answer, parsed_images = parse_expert_json(raw_content)
+        answer = normalize_answer_pic_tags(answer)
         selected_images = [
             image_name
-            for image_name in selected_images
+            for image_name in parsed_images
             if image_name in image_names
         ]
-        if not selected_images:
-            selected_images = image_names[:MAX_EXPERT_IMAGES]
+        pic_count = answer.count("<PIC>")
+        if pic_count <= 0:
+            selected_images = []
+        elif selected_images:
+            selected_images = selected_images[:pic_count]
+        else:
+            selected_images = image_names[:pic_count]
 
+        record_expert_response(
+            history=history,
+            intent=intent,
+            model=self.model,
+            retrieval_results=results,
+            candidate_image_names=image_names,
+            raw_content=raw_content,
+            parsed_answer=answer,
+            parsed_image_names=parsed_images,
+            final_answer=answer,
+            final_image_names=selected_images,
+            user_id=None,
+        )
         return self._format_expert_reply(answer, selected_images)
 
     def _retrieve_manual_context(
@@ -405,8 +708,87 @@ class ExpertAgent(BaseAgent):
             question=question,
             manual_path=intent.manual_path,
             product_name=intent.product_name,
-            top_k=3,
+            top_k=6,
             neighbor_count=1,
+        )
+
+    async def _call_expert_model_with_retry(
+        self,
+        *,
+        history: List[ChatMessage],
+        intent: IntentResult,
+        results: List[RetrievalResult],
+        image_names: List[str],
+    ) -> tuple[str, List[str], str]:
+        candidate_image_names = image_names
+        last_error = ""
+        without_images = False
+
+        for attempt in range(1, MAX_EXPERT_MODEL_RETRIES + 1):
+            candidate_image_names = [] if without_images else image_names
+            messages = self._expert_messages(
+                history,
+                intent,
+                results,
+                candidate_image_names,
+            )
+            try:
+                completion = await self._client().chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                )
+                raw_content = completion.choices[0].message.content or ""
+                if raw_content.strip():
+                    return raw_content, candidate_image_names, ""
+
+                last_error = "Empty expert response"
+                print(
+                    "expert model returned empty content: "
+                    f"attempt={attempt}/{MAX_EXPERT_MODEL_RETRIES} "
+                    f"without_images={without_images}"
+                )
+            except Exception as exc:
+                last_error = f"{type(exc).__name__}: {exc}"
+                if self._is_data_inspection_error(exc) and not without_images:
+                    print(
+                        "expert image data inspection failed; "
+                        "retrying without images"
+                    )
+                    without_images = True
+                    continue
+
+                if self._is_retryable_expert_error(exc):
+                    print(
+                        "expert model retryable call failed: "
+                        f"attempt={attempt}/{MAX_EXPERT_MODEL_RETRIES} "
+                        f"without_images={without_images} {last_error}"
+                    )
+                else:
+                    return "", candidate_image_names, last_error
+
+            if attempt < MAX_EXPERT_MODEL_RETRIES:
+                await asyncio.sleep(attempt)
+
+        return "", candidate_image_names, last_error
+
+    @staticmethod
+    def _is_data_inspection_error(exc: Exception) -> bool:
+        text = f"{type(exc).__name__}: {exc}".casefold()
+        return (
+            "datainspectionfailed" in text
+            or "data_inspection_failed" in text
+            or "inappropriate content" in text
+        )
+
+    @staticmethod
+    def _is_retryable_expert_error(exc: Exception) -> bool:
+        name = type(exc).__name__.casefold()
+        text = str(exc).casefold()
+        return (
+            "connection" in name
+            or "timeout" in name
+            or "connect" in text
+            or "timed out" in text
         )
 
     def _expert_messages(
@@ -419,16 +801,19 @@ class ExpertAgent(BaseAgent):
         system_prompt = self.prompt_template or (
             "你是产品手册专家助手，必须只根据给定手册片段回答。"
         )
+        system_prompt = f"{system_prompt}\n{LANGUAGE_SYSTEM_RULE}"
         text_prompt = build_expert_prompt(history, intent, results, image_names)
         content: List[Dict[str, Any]] = [
             {"type": "text", "text": text_prompt},
         ]
+        image_labels = build_image_label_map(image_names)
 
         for image_name in image_names[:MAX_EXPERT_IMAGES]:
             image_path = find_image_path(image_name)
             if image_path is None:
                 continue
-            content.append({"type": "text", "text": f"图片名称：{image_name}"})
+            image_label = image_labels.get(image_name, "PIC")
+            content.append({"type": "text", "text": f"图片 <{image_label}: {image_name}>"})
             content.append(
                 {
                     "type": "image_url",
@@ -438,10 +823,16 @@ class ExpertAgent(BaseAgent):
                 }
             )
 
-        return [
+        messages: List[Dict[str, Any]] = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": content},
         ]
+        for message in history[:-1]:
+            role = message.get("role", "")
+            previous_content = message.get("content", "")
+            if role in {"user", "assistant"} and previous_content:
+                messages.append({"role": role, "content": previous_content})
+        messages.append({"role": "user", "content": content})
+        return messages
 
     async def _fallback_expert_reply(
         self,
@@ -449,6 +840,7 @@ class ExpertAgent(BaseAgent):
         intent: IntentResult,
     ) -> str:
         system_prompt = self.prompt_template or "你是产品手册专家助手。"
+        system_prompt = f"{system_prompt}\n{LANGUAGE_SYSTEM_RULE}"
         extra_user_context = (
             f"产品：{intent.product_name or '相关产品'}\n"
             "当前没有可用的手册检索结果，请基于历史会话给出谨慎、简洁的回复。"
@@ -468,26 +860,12 @@ class CustomerAgent(BaseAgent):
 
     async def reply(self, history: List[ChatMessage], intent: IntentResult) -> str:
         system_prompt = self.prompt_template or "你是一个专业、耐心的电商客服助手。"
+        system_prompt = f"{system_prompt}\n{LANGUAGE_SYSTEM_RULE}"
         extra_user_context = (
-            f"路由结果：电商客服\n"
+            "路由结果：电商客服\n"
             f"路由原因：{intent.reason}\n\n"
-            "请结合完整历史会话，参考以下客服回复示例的语气、结构和处理原则，"
-            "给出简洁、礼貌、可执行的客服回复。不要机械复述示例，需根据用户当前问题作答。\n\n"
-            "参考示例：\n"
-            "1. 用户：请问你们的商品能送到乡镇吗？需要额外加运费吗？多久能到？\n"
-            "   客服：您好，我们的商品支持送到大部分乡镇哦，具体能否送达，取决于您的收货地址，"
-            "您可以告诉我详细的收货地址，我帮您查询。送到乡镇一般不需要额外加运费，和市区运费一致；"
-            "物流时效会比市区稍慢，正常情况下，下单后48小时发货，乡镇地区3-5天可收到，"
-            "偏远乡镇可能需要5-7天哦。\n"
-            "2. 用户：物流一直显示待揽收，是什么原因？\n"
-            "   客服：您好，物流显示待揽收，大概率是商品已打包完成，等待快递员上门取件哦，"
-            "一般24小时内会完成揽收；若超过24小时仍未揽收，您可以联系我们客服，"
-            "我们会催促快递方尽快上门。\n"
-            "3. 用户：我购买的商品，售后维修后，使用不到10天又出现同样的故障，"
-            "而且维修人员说这次故障是上次维修不彻底导致的，请问该怎么处理？\n"
-            "   客服：您好，非常抱歉给您带来困扰！维修后短期内出现同样故障，"
-            "且是上次维修不彻底导致的，属于我们的维修失误，支持免费重新维修，并延长维修质保期。"
-            "请您提供维修单号、商品故障描述，我们立即安排专业维修人员处理。"
+            "请结合完整历史会话，给出简洁、礼貌、可执行的客服回复。"
+            "不要机械复述示例，需要根据用户当前问题作答。"
         )
         return await self._chat_with_history(history, system_prompt, extra_user_context)
 
@@ -508,3 +886,4 @@ async def generate_reply(
        return await expert_agent.reply(history, intent)
 
     return await customer_agent.reply(history, intent)
+

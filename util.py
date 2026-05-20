@@ -20,7 +20,8 @@ MANUAL_SUMMARY_PATH = BASE_DIR / "manual_summaries.yaml"
 MANUAL_DIR = BASE_DIR / "手册"
 IMAGE_DIR = MANUAL_DIR / "插图"
 INTENT_LOG_PATH = BASE_DIR / "intent_log.jsonl"
-MAX_EXPERT_IMAGES = 6
+EXPERT_LOG_PATH = BASE_DIR / "expert_log.jsonl"
+MAX_EXPERT_IMAGES = 100
 
 AgentType = Literal["customer", "expert"]
 ChatMessage = Dict[str, str]
@@ -184,6 +185,51 @@ def record_intent(
         file.write(json.dumps(log_item, ensure_ascii=False) + "\n")
 
 
+def record_expert_response(
+    *,
+    history: List[ChatMessage],
+    intent: IntentResult,
+    model: str,
+    retrieval_results: List[RetrievalResult],
+    candidate_image_names: List[str],
+    raw_content: str,
+    parsed_answer: str,
+    parsed_image_names: List[str],
+    final_answer: str,
+    final_image_names: List[str],
+    user_id: str | None = None,
+) -> None:
+    log_item = {
+        "time": datetime.now().isoformat(timespec="seconds"),
+        "user_id": user_id,
+        "question": latest_user_message(history),
+        "product_name": intent.product_name,
+        "manual_path": str(intent.manual_path) if intent.manual_path else None,
+        "model": model,
+        "retrieval": [
+            {
+                "rank": index,
+                "score": result.score,
+                "entry_index": result.chunk.entry_index,
+                "start": result.chunk.start,
+                "end": result.chunk.end,
+                "image_names": result.chunk.image_names,
+                "text_preview": normalize_manual_chunk_text(result.chunk.text)[:300],
+            }
+            for index, result in enumerate(retrieval_results, start=1)
+        ],
+        "candidate_image_names": candidate_image_names,
+        "raw_content": raw_content,
+        "parsed_answer": parsed_answer,
+        "parsed_image_names": parsed_image_names,
+        "final_answer": final_answer,
+        "final_image_names": final_image_names,
+    }
+
+    with EXPERT_LOG_PATH.open("a", encoding="utf-8") as file:
+        file.write(json.dumps(log_item, ensure_ascii=False) + "\n")
+
+
 def parse_json_object(content: str) -> Dict[str, Any]:
     try:
         return json.loads(content)
@@ -245,6 +291,7 @@ def build_expert_prompt(
     results: List[RetrievalResult],
     image_names: List[str],
 ) -> str:
+    image_labels = build_image_label_map(image_names)
     context_blocks = []
     for index, result in enumerate(results, start=1):
         chunk = result.chunk
@@ -253,46 +300,49 @@ def build_expert_prompt(
                 [
                     f"[片段{index}] score={result.score:.4f} "
                     f"entry={chunk.entry_index} span={chunk.start}:{chunk.end}",
-                    f"图片名：{', '.join(chunk.image_names) if chunk.image_names else '无'}",
-                    chunk.text,
+                    f"图片标签：{format_image_labels(chunk.image_names, image_labels)}",
+                    annotate_pic_tokens(chunk.text, chunk.image_names, image_labels),
                 ]
             )
         )
 
-    history_text = "\n".join(
-        f"{message.get('role', '')}: {message.get('content', '')}"
-        for message in history[-6:]
-        if message.get("content")
-    )
-
     return (
         f"产品名称：{intent.product_name or '相关产品'}\n"
         f"用户问题：{latest_user_message(history)}\n\n"
-        "历史会话：\n"
-        f"{history_text}\n\n"
-        "检索到的手册片段如下。片段中的 <PIC> 表示该位置有插图，图片名已经列出。\n"
+        "检索到的手册片段如下。片段中的 <PIC_序号: 图片名> 表示该位置有对应插图。\n"
         "请严格根据手册片段回答，不要编造手册中没有的信息，直接回答问题，回复必须简洁明了。\n"
-        "如果答案需要引用图片，只能从“可选图片名”中选择。答案中 <PIC> 数量应等于图片数量\n"
+        "如果答案需要引用图片，只能从“已提供图片”中选择。答案中 <PIC> 数量应等于图片数量。\n"
+        "最终 JSON 的 image_names 必须只填写原始图片名，不要填写 PIC 标签。\n"
         "最终只输出 JSON，不要输出 Markdown 或解释。\n"
-        "英文问题，英文回答。\n"
         'JSON 格式：{"answer":"回答正文，保留必要的 <PIC> 占位符",'
         '"image_names":["图片名","图片名"]}\n\n'
-        f"可选图片名：{json.dumps(image_names, ensure_ascii=False)}\n\n"
+        "参考范例：\n"
+        "用户问题：我的DCB107或DCB112型号电钻指示灯闪烁时，这些闪烁标识代表什么含义？\n"
+        '输出：{"answer":"DCB107、DCB112 指示灯闪烁标识包括：电池组充电中 <PIC>、电池组已充满 <PIC>、过热/过冷延迟 <PIC>。",'
+        '"image_names":["drill0_04","drill0_05","drill0_06"]}\n'
+        "用户问题：我想更换健身追踪器的表带，有其他尺寸可选吗？\n"
+        '输出：{"answer":"表带有不同尺寸可选，具体尺寸请参考表带尺寸说明。单独销售的配件表带可能略有差异。<PIC>",'
+        '"image_names":["Manual16_51"]}\n\n'
+        f"已提供图片：\n{format_provided_images(image_names, image_labels)}\n\n"
         "手册片段：\n"
         + "\n\n".join(context_blocks)
     )
 
 
 def unique_image_names(results: List[RetrievalResult]) -> List[str]:
+    if not results:
+        return []
+
     image_names: List[str] = []
     seen = set()
-    ranked_results = sorted(results, key=lambda item: item.score, reverse=True)
-    for result in ranked_results:
-        for image_name in result.chunk.image_names:
+    for result in results:
+        for image_name, _ in image_positions_in_chunk(result.chunk):
             if image_name in seen:
                 continue
             seen.add(image_name)
             image_names.append(image_name)
+            if len(image_names) >= MAX_EXPERT_IMAGES:
+                return image_names
     return image_names[:MAX_EXPERT_IMAGES]
 
 
@@ -317,6 +367,63 @@ def normalize_manual_chunk_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def image_positions_in_chunk(chunk: Any) -> List[tuple[str, int]]:
+    pic_positions = [
+        match.start()
+        for match in re.finditer(r"<PIC>", chunk.text)
+    ]
+    return [
+        (image_name, chunk.start + pic_position)
+        for image_name, pic_position in zip(chunk.image_names, pic_positions)
+    ]
+
+
+def build_image_label_map(image_names: List[str]) -> Dict[str, str]:
+    return {
+        image_name: f"PIC_{index}"
+        for index, image_name in enumerate(image_names, start=1)
+    }
+
+
+def format_image_labels(image_names: List[str], image_labels: Dict[str, str]) -> str:
+    labels = [
+        f"<{image_labels[image_name]}: {image_name}>"
+        for image_name in image_names
+        if image_name in image_labels
+    ]
+    return ", ".join(labels) if labels else "无"
+
+
+def format_provided_images(image_names: List[str], image_labels: Dict[str, str]) -> str:
+    if not image_names:
+        return "无"
+    return "\n".join(
+        f"<{image_labels[image_name]}: {image_name}>"
+        for image_name in image_names
+        if image_name in image_labels
+    )
+
+
+def annotate_pic_tokens(
+    text: str,
+    image_names: List[str],
+    image_labels: Dict[str, str],
+) -> str:
+    if "<PIC>" not in text or not image_names:
+        return text
+
+    image_iter = iter(image_names)
+
+    def replace_pic(match: re.Match[str]) -> str:
+        image_name = next(image_iter, "")
+        label = image_labels.get(image_name)
+        if not image_name or not label:
+            return match.group(0)
+        return f"<{label}: {image_name}>"
+
+    return re.sub(r"<PIC>", replace_pic, text, count=len(image_names))
+
+
 def parse_expert_json(content: str) -> tuple[str, List[str]]:
     content = content.strip()
     data = parse_json_object(content)
@@ -328,6 +435,11 @@ def parse_expert_json(content: str) -> tuple[str, List[str]]:
     if not isinstance(raw_image_names, list):
         raw_image_names = []
     return answer, [str(image_name) for image_name in raw_image_names if str(image_name).strip()]
+
+
+def normalize_answer_pic_tags(answer: str) -> str:
+    answer = re.sub(r"<PIC_\d+\s*:\s*[^>]+>", "<PIC>", answer)
+    return re.sub(r"<PIC_\d+>", "<PIC>", answer)
 
 
 def find_image_path(image_name: str) -> Path | None:

@@ -5,13 +5,9 @@ from typing import Dict, List
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from model import ChatMessage, generate_reply
+from model import ChatMessage, generate_reply, intent_agent
 from rag import get_default_rag
 from util import MANUAL_DIR
-
-
-MAX_REPLY_RETRIES = 2
-FALLBACK_REPLY = "您好，您的问题已收到，请您耐心等待处理结果，谢谢。"
 
 
 @asynccontextmanager
@@ -29,6 +25,7 @@ sessions: Dict[str, List[ChatMessage]] = {}
 async def warmup_rag():
     manual_path = MANUAL_DIR / "空调手册.txt"
     if not manual_path.exists():
+        await intent_agent.warmup_global_rag()
         return
 
     await asyncio.to_thread(
@@ -39,36 +36,12 @@ async def warmup_rag():
         1,
         0,
     )
+    await intent_agent.warmup_global_rag()
 
 
 class ChatRequest(BaseModel):
     user_id: str
     message: str
-
-
-async def generate_reply_with_retry(
-    history: List[ChatMessage],
-    user_id: str,
-    max_retries: int = MAX_REPLY_RETRIES,
-) -> str:
-    last_error: Exception | None = None
-    for attempt in range(1, max_retries + 1):
-        try:
-            return await generate_reply(history, user_id=user_id)
-        except Exception as exc:
-            last_error = exc
-            print(
-                f"user_id={user_id} reply attempt={attempt}/{max_retries} failed: "
-                f"{type(exc).__name__}: {exc}"
-            )
-            if attempt < max_retries:
-                await asyncio.sleep(1)
-
-    print(
-        f"user_id={user_id} all reply attempts failed: "
-        f"{type(last_error).__name__ if last_error else 'UnknownError'}: {last_error}"
-    )
-    return FALLBACK_REPLY
 
 
 @app.post("/chat")
@@ -83,7 +56,7 @@ async def chat(req: ChatRequest):
         "content": req.message,
     })
 
-    reply = await generate_reply_with_retry(sessions[user_id], user_id=user_id)
+    reply = await generate_reply(sessions[user_id], user_id=user_id)
 
     sessions[user_id].append({
         "role": "assistant",

@@ -8,6 +8,14 @@ agents:
   intent:
     model: "qwen3.6-flash"
     prompt_template: "你是意图识别助手，负责判断用户问题应该交给通用客服还是产品专家。"
+    routing_mode: "global_rag"  # summary 或 global_rag
+
+    global_rag_assist:
+      enabled: true
+      manual_count: 10
+      snippets_per_manual: 2
+      global_top_k: 80
+      snippet_max_chars: 420
 
   expert:
     model: "qwen3.6-flash"

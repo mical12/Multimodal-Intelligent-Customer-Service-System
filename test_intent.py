@@ -84,9 +84,12 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=Path("intent_test_result.csv"))
+    parser.add_argument("--limit", type=int)
     args = parser.parse_args()
 
     questions = load_questions(args.input)
+    if args.limit:
+        questions = questions[: args.limit]
     results = []
     for index, row in enumerate(questions, start=1):
         result = await test_question(row)

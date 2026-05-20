@@ -15,7 +15,6 @@ VR头显:
     - 专业相机
     - 单反相机
     - 摄影相机
-    - camera
     - professional camera
     - dslr
     - cf card
@@ -104,11 +103,6 @@ VR头显:
   "Color Television":
     - television
     - color television
-    - outdoor antenna
-    - manual program
-    - channel memory
-    - favorite channel
-    - sound system
 
   VACUUM:
     - vacuum
@@ -208,8 +202,6 @@ VR头显:
   - 动感单车
   - 运动单车
   - 控制台
-  - exercise bike
-  - fitness bike
 
 健身追踪器:
   - 健身追踪器
@@ -218,8 +210,6 @@ VR头显:
   - 追踪器
   - 表带
   - 心率
-  - fitness tracker
-  - tracker
 
 儿童电动摩托车:
   - 儿童电动摩托车
@@ -227,25 +217,17 @@ VR头显:
   - 电动摩托车
   - 挡泥板
   - 前轮
-  - electric motorcycle
-  - kids electric motorcycle
 
 冰箱:
   - 冰箱
   - 冰柜
   - 家电冰箱
-  - refrigerator
-  - fridge
-  - freezer
 
 功能键盘:
   - 功能键盘
   - 键盘
   - 机械键盘
   - 轴体
-  - CAM软件
-  - keyboard
-  - cam software
 
 发电机:
   - 发电机
@@ -253,7 +235,6 @@ VR头显:
   - 燃油开关
   - 直流保护器
   - 火花塞
-  - generator
 
 可编程温控器:
   - 可编程温控器
@@ -263,16 +244,12 @@ VR头显:
   - 端子
   - 接线
   - thermostat
-  - programmable thermostat
-  - temperature controller
 
 吹风机:
   - 吹风机
   - 化油器
   - 冷机
   - 热机
-  - blower
-  - leaf blower
 
 摩托艇:
   - 摩托艇
@@ -285,8 +262,6 @@ VR头显:
   - 水泵
   - 抽水
   - 油箱滤网
-  - pump
-  - water pump
 
 洗碗机:
   - 洗碗机
@@ -303,8 +278,6 @@ VR头显:
   - 烤盘
   - 接油盘
   - 催化侧面板
-  - oven
-  - grill
 
 电钻:
   - 电钻
@@ -312,8 +285,6 @@ VR头显:
   - 电池组
   - 腰带挂钩
   - 批头夹
-  - DCB101
-  - drill
 
 相机:
   - 相机
@@ -322,13 +293,11 @@ VR头显:
   - 相纸盒
   - 自动打印
   - 手动打印
-  - instant camera
 
 空气净化器:
   - 空气净化器
   - 净化器
   - 空气质量指示灯
-  - air purifier
 
 空调:
   - 空调
@@ -338,24 +307,17 @@ VR头显:
   - 等离子净化
   - 节能制冷
   - 3M多重防护滤网
-  - air conditioner
 
 蒸汽清洁机:
   - 蒸汽清洁机
   - 蒸汽拖把
   - 清洁机
   - 硬质地面
-  - steam cleaner
 
 蓝牙激光鼠标:
   - 蓝牙激光鼠标
   - 蓝牙鼠标
   - 激光鼠标
   - 鼠标
-  - WIDCOMM
   - 快速配对
   - 人机接口设备
-  - bluetooth laser mouse
-  - bluetooth mouse
-  - laser mouse
-  - mouse

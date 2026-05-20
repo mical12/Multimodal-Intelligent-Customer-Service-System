@@ -13,6 +13,7 @@ QUESTION_PATH = Path("question_public.csv")
 OUTPUT_PATH = Path("submission.csv")
 ERROR_LOG_PATH = Path("test_errors.csv")
 DEFAULT_BATCH_SIZE = 3
+DEFAULT_RETRIES = 3
 FALLBACK_REPLY = "您好，您的问题已收到，请您耐心等待处理结果，谢谢。"
 
 
@@ -70,32 +71,44 @@ async def request_reply(
 ) -> dict[str, str]:
     started = time.perf_counter()
     response: httpx.Response | None = None
-    try:
-        response = await client.post(
-            API_URL,
-            json={
-                "user_id": f"test_{question_id}",
-                "message": question,
-            },
-        )
-        response.raise_for_status()
-        reply = response.json()["reply"]
-    except Exception as exc:
+    last_exc: Exception | None = None
+    for attempt in range(1, DEFAULT_RETRIES + 1):
+        try:
+            response = await client.post(
+                API_URL,
+                json={
+                    "user_id": f"test_{question_id}",
+                    "message": question,
+                },
+            )
+            response.raise_for_status()
+            reply = response.json()["reply"]
+            break
+        except Exception as exc:
+            last_exc = exc
+            elapsed = time.perf_counter() - started
+            status_code = response.status_code if response is not None else None
+            print(
+                f"id={question_id} attempt={attempt}/{DEFAULT_RETRIES} failed: "
+                f"{type(exc).__name__}: {exc} elapsed={elapsed:.2f}s "
+                f"status={status_code}"
+            )
+            if attempt < DEFAULT_RETRIES:
+                await asyncio.sleep(2 * attempt)
+    else:
         elapsed = time.perf_counter() - started
         status_code = response.status_code if response is not None else None
         response_text = response.text if response is not None else ""
+        error_type = type(last_exc).__name__ if last_exc else "UnknownError"
+        error_message = str(last_exc) if last_exc else ""
         append_error_log(
             question_id=question_id,
             question=question,
-            error_type=type(exc).__name__,
-            error_message=str(exc),
+            error_type=error_type,
+            error_message=error_message,
             elapsed=elapsed,
             status_code=status_code,
             response_text=response_text,
-        )
-        print(
-            f"id={question_id} failed: {type(exc).__name__}: {exc} "
-            f"elapsed={elapsed:.2f}s status={status_code}"
         )
         reply = FALLBACK_REPLY
 
@@ -192,12 +205,15 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--limit", type=int)
     return parser.parse_args()
 
 
 async def main():
     args = parse_args()
     questions = load_questions(QUESTION_PATH)
+    if args.limit:
+        questions = questions[: args.limit]
     await generate_submission_file(
         questions,
         args.batch_size,

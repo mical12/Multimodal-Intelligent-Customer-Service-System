@@ -17,7 +17,7 @@ MANUAL_ALIAS_PATH = BASE_DIR / "manual_aliases.yaml"
 
 DEFAULT_EMBEDDING_MODEL_NAME = "Qwen/Qwen3-VL-Embedding-2B"
 DEFAULT_EMBEDDING_MODEL_DIR = BASE_DIR / "Qwen3-VL-Embedding-2B"
-DEFAULT_CHUNK_SIZE = 512
+DEFAULT_CHUNK_SIZE = 256
 DEFAULT_CHUNK_OVERLAP = 30
 DEFAULT_BATCH_SIZE = 4
 DEFAULT_QUERY_PROMPT = "Retrieve relevant product manual passages for the user's question."
@@ -25,13 +25,24 @@ ENGLISH_SUMMARY_PRODUCT = "英文汇总"
 MANUAL_SUFFIX = "手册"
 PIC_TOKEN = "<PIC>"
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
-CACHE_VERSION = 1
+CACHE_VERSION = 2
 
 
 @dataclass
 class ManualEntry:
     content: str
     image_names: list[str]
+
+
+@dataclass
+class ChunkMetaData:
+    entry_index: int
+    start: int
+    end: int
+    char_count: int
+    image_count: int
+    chunking_strategy: str
+    heading: str = ""
 
 
 @dataclass
@@ -42,6 +53,7 @@ class ManualChunk:
     end: int
     image_names: list[str] = field(default_factory=list)
     image_paths: list[Path] = field(default_factory=list)
+    metadata: ChunkMetaData | None = None
 
 
 @dataclass
@@ -91,7 +103,7 @@ class ManualRAG:
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         batch_size: int = DEFAULT_BATCH_SIZE,
-        max_images_per_chunk: int = 1,
+        max_images_per_chunk: int = 0,
         query_prompt: str = DEFAULT_QUERY_PROMPT,
         device: str = "cpu",
     ):
@@ -452,7 +464,6 @@ def split_manual_entries(
     chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[ManualChunk]:
     chunks: list[ManualChunk] = []
-    step = chunk_size - chunk_overlap
     selected_indexes = entry_indexes if entry_indexes is not None else list(range(len(entries)))
 
     for entry_index in selected_indexes:
@@ -467,35 +478,150 @@ def split_manual_entries(
             match.start()
             for match in re.finditer(re.escape(PIC_TOKEN), content)
         ]
-        start = 0
-        while start < len(content):
-            end = min(start + chunk_size, len(content))
-            image_names = image_names_for_span(
-                image_names=entry.image_names,
-                pic_positions=pic_positions,
-                start=start,
-                end=end,
-            )
-            image_paths = [
-                image_path
-                for image_name in image_names
-                if (image_path := resolve_image_path(image_name, image_dir)) is not None
-            ]
+
+        for start, end, strategy in paragraph_chunk_spans(content, chunk_size, chunk_overlap):
             chunks.append(
-                ManualChunk(
-                    text=content[start:end],
+                build_manual_chunk(
+                    content=content,
                     entry_index=entry_index,
                     start=start,
                     end=end,
-                    image_names=image_names,
-                    image_paths=image_paths,
+                    strategy=strategy,
+                    entry_image_names=entry.image_names,
+                    pic_positions=pic_positions,
+                    image_dir=image_dir,
                 )
             )
-            if end >= len(content):
-                break
-            start += step
 
     return chunks
+
+
+def build_manual_chunk(
+    content: str,
+    entry_index: int,
+    start: int,
+    end: int,
+    strategy: str,
+    entry_image_names: list[str],
+    pic_positions: list[int],
+    image_dir: Path,
+) -> ManualChunk:
+    image_names = image_names_for_span(
+        image_names=entry_image_names,
+        pic_positions=pic_positions,
+        start=start,
+        end=end,
+    )
+    image_paths = [
+        image_path
+        for image_name in image_names
+        if (image_path := resolve_image_path(image_name, image_dir)) is not None
+    ]
+    metadata = ChunkMetaData(
+        entry_index=entry_index,
+        start=start,
+        end=end,
+        char_count=end - start,
+        image_count=len(image_names),
+        chunking_strategy=strategy,
+        heading=extract_chunk_heading(content[start:end]),
+    )
+    return ManualChunk(
+        text=content[start:end],
+        entry_index=entry_index,
+        start=start,
+        end=end,
+        image_names=image_names,
+        image_paths=image_paths,
+        metadata=metadata,
+    )
+
+
+def paragraph_chunk_spans(
+    content: str,
+    chunk_size: int,
+    chunk_overlap: int,
+) -> list[tuple[int, int, str]]:
+    spans: list[tuple[int, int, str]] = []
+    current_start: int | None = None
+    current_end: int | None = None
+
+    def flush_current() -> None:
+        nonlocal current_start, current_end
+        if current_start is not None and current_end is not None:
+            spans.append((current_start, current_end, "paragraph"))
+        current_start = None
+        current_end = None
+
+    for line_start, line_end in non_empty_line_spans(content):
+        if line_end - line_start > chunk_size:
+            flush_current()
+            spans.extend(
+                (start, end, "paragraph_window")
+                for start, end in split_long_span(content, line_start, line_end, chunk_size, chunk_overlap)
+            )
+            continue
+
+        if current_start is None:
+            current_start = line_start
+            current_end = line_end
+            continue
+
+        if line_end - current_start <= chunk_size:
+            current_end = line_end
+            continue
+
+        flush_current()
+        current_start = line_start
+        current_end = line_end
+
+    flush_current()
+    return spans
+
+
+def non_empty_line_spans(content: str) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    for match in re.finditer(r"[^\n\r]+(?:\r?\n)?", content):
+        line = match.group(0)
+        if line.strip():
+            spans.append((match.start(), match.end()))
+    return spans
+
+
+def split_long_span(
+    content: str,
+    start: int,
+    end: int,
+    chunk_size: int,
+    chunk_overlap: int,
+) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    cursor = start
+    while cursor < end:
+        limit = min(cursor + chunk_size, end)
+        split_at = limit
+        if limit < end:
+            relative_text = content[cursor:limit]
+            break_positions = [
+                relative_text.rfind(separator)
+                for separator in ("。", "！", "？", "；", ";", ".", "!", "?", "\n")
+            ]
+            best_break = max(break_positions)
+            if best_break >= chunk_size // 3:
+                split_at = cursor + best_break + 1
+        spans.append((cursor, split_at))
+        if split_at >= end:
+            break
+        cursor = max(split_at - chunk_overlap, cursor + 1)
+    return spans
+
+
+def extract_chunk_heading(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            return stripped.lstrip("#").strip()
+    return ""
 
 
 def image_names_for_span(
@@ -593,6 +719,7 @@ def serialize_chunk(chunk: ManualChunk) -> dict[str, Any]:
         "end": chunk.end,
         "image_names": chunk.image_names,
         "image_paths": [str(path) for path in chunk.image_paths],
+        "metadata": serialize_chunk_metadata(chunk.metadata),
     }
 
 
@@ -601,6 +728,7 @@ def deserialize_chunk(chunk: Any) -> ManualChunk:
         return chunk
     if not isinstance(chunk, dict):
         return ManualChunk(text="", entry_index=0, start=0, end=0)
+    metadata = chunk.get("metadata")
     return ManualChunk(
         text=str(chunk.get("text", "")),
         entry_index=int(chunk.get("entry_index", 0)),
@@ -614,6 +742,50 @@ def deserialize_chunk(chunk: Any) -> ManualChunk:
             Path(image_path)
             for image_path in chunk.get("image_paths", [])
         ],
+        metadata=deserialize_chunk_metadata(metadata, chunk),
+    )
+
+
+def serialize_chunk_metadata(metadata: ChunkMetaData | None) -> dict[str, Any] | None:
+    if metadata is None:
+        return None
+    return {
+        "entry_index": metadata.entry_index,
+        "start": metadata.start,
+        "end": metadata.end,
+        "char_count": metadata.char_count,
+        "image_count": metadata.image_count,
+        "chunking_strategy": metadata.chunking_strategy,
+        "heading": metadata.heading,
+    }
+
+
+def deserialize_chunk_metadata(
+    metadata: Any,
+    fallback_chunk: dict[str, Any],
+) -> ChunkMetaData:
+    if not isinstance(metadata, dict):
+        start = int(fallback_chunk.get("start", 0))
+        end = int(fallback_chunk.get("end", 0))
+        image_names = fallback_chunk.get("image_names", [])
+        return ChunkMetaData(
+            entry_index=int(fallback_chunk.get("entry_index", 0)),
+            start=start,
+            end=end,
+            char_count=end - start,
+            image_count=len(image_names) if isinstance(image_names, list) else 0,
+            chunking_strategy="legacy",
+            heading="",
+        )
+
+    return ChunkMetaData(
+        entry_index=int(metadata.get("entry_index", fallback_chunk.get("entry_index", 0))),
+        start=int(metadata.get("start", fallback_chunk.get("start", 0))),
+        end=int(metadata.get("end", fallback_chunk.get("end", 0))),
+        char_count=int(metadata.get("char_count", 0)),
+        image_count=int(metadata.get("image_count", 0)),
+        chunking_strategy=str(metadata.get("chunking_strategy", "")),
+        heading=str(metadata.get("heading", "")),
     )
 
 
@@ -709,7 +881,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
     parser.add_argument("--chunk-overlap", type=int, default=DEFAULT_CHUNK_OVERLAP)
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
-    parser.add_argument("--max-images-per-chunk", type=int, default=1)
+    parser.add_argument("--max-images-per-chunk", type=int, default=0)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--rebuild-cache", action="store_true")
