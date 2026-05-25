@@ -43,6 +43,7 @@ class IntentResult:
     manual_content: str = ""
     image_names: List[str] = field(default_factory=list)
     reason: str = ""
+    routing_results: List[RetrievalResult] = field(default_factory=list)
 
 
 @dataclass
@@ -57,6 +58,7 @@ class ManualMatch:
     manual_path: Path
     manual_content: str
     image_names: List[str]
+    routing_results: List[RetrievalResult] = field(default_factory=list)
 
 
 def load_config(config_path: Path = CONFIG_PATH) -> Dict[str, Any]:
@@ -179,6 +181,7 @@ def record_intent(
         "image_names": intent.image_names,
         "manual_content_length": len(intent.manual_content),
         "reason": intent.reason,
+        "routing_result_count": len(intent.routing_results),
     }
 
     with INTENT_LOG_PATH.open("a", encoding="utf-8") as file:

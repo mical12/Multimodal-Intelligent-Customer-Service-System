@@ -20,6 +20,9 @@ agents:
   expert:
     model: "qwen3.6-flash"
     prompt_template: "你是产品专家助手，负责结合产品手册回答安装、使用、故障排查等问题。"
+    retrieval:
+      top_k: 4
+      neighbor_count: 0
 
   customer:
     model: "qwen3.6-flash"

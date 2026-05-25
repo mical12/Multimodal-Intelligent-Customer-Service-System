@@ -17,15 +17,15 @@ MANUAL_ALIAS_PATH = BASE_DIR / "manual_aliases.yaml"
 
 DEFAULT_EMBEDDING_MODEL_NAME = "Qwen/Qwen3-VL-Embedding-2B"
 DEFAULT_EMBEDDING_MODEL_DIR = BASE_DIR / "Qwen3-VL-Embedding-2B"
-DEFAULT_CHUNK_SIZE = 256
-DEFAULT_CHUNK_OVERLAP = 30
+DEFAULT_CHUNK_SIZE = 512
 DEFAULT_BATCH_SIZE = 4
 DEFAULT_QUERY_PROMPT = "Retrieve relevant product manual passages for the user's question."
 ENGLISH_SUMMARY_PRODUCT = "英文汇总"
 MANUAL_SUFFIX = "手册"
 PIC_TOKEN = "<PIC>"
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
-CACHE_VERSION = 2
+CACHE_VERSION = 3
+HEADING_PATTERN = re.compile(r"(?<!\S)#\s+")
 
 
 @dataclass
@@ -101,14 +101,11 @@ class ManualRAG:
         image_dir: Path = IMAGE_DIR,
         cache_dir: Path = RAG_CACHE_DIR,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
-        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
         batch_size: int = DEFAULT_BATCH_SIZE,
         max_images_per_chunk: int = 0,
         query_prompt: str = DEFAULT_QUERY_PROMPT,
         device: str = "cpu",
     ):
-        if chunk_overlap >= chunk_size:
-            raise ValueError("chunk_overlap 必须小于 chunk_size。")
         if max_images_per_chunk < 0:
             raise ValueError("max_images_per_chunk 不能小于 0。")
 
@@ -116,7 +113,6 @@ class ManualRAG:
         self.image_dir = image_dir
         self.cache_dir = cache_dir
         self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
         self.batch_size = batch_size
         self.max_images_per_chunk = max_images_per_chunk
         self.query_prompt = query_prompt
@@ -171,7 +167,6 @@ class ManualRAG:
             entry_indexes=entry_indexes,
             image_dir=self.image_dir,
             chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap,
         )
         metadata = self._cache_metadata(manual_path, product_name, entry_indexes, chunks)
         cache_path = self._cache_path(manual_path, product_name)
@@ -206,7 +201,6 @@ class ManualRAG:
             entry_indexes=selected_entry_indexes(manual_path, product_name, len(entries)),
             image_dir=self.image_dir,
             chunk_size=self.chunk_size,
-            chunk_overlap=self.chunk_overlap,
         )
 
     def warmup_all(
@@ -307,7 +301,6 @@ class ManualRAG:
                 str(manual_path.resolve()),
                 product_part,
                 str(self.chunk_size),
-                str(self.chunk_overlap),
                 str(self.max_images_per_chunk),
                 str(self.embedding_model_dir.resolve()),
             ]
@@ -332,7 +325,6 @@ class ManualRAG:
             "product_name": product_name,
             "entry_indexes": entry_indexes,
             "chunk_size": self.chunk_size,
-            "chunk_overlap": self.chunk_overlap,
             "max_images_per_chunk": self.max_images_per_chunk,
             "embedding_model_dir": str(self.embedding_model_dir.resolve()),
             "image_fingerprints": image_fingerprints(chunks),
@@ -461,7 +453,6 @@ def split_manual_entries(
     entry_indexes: list[int] | None = None,
     image_dir: Path = IMAGE_DIR,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
-    chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[ManualChunk]:
     chunks: list[ManualChunk] = []
     selected_indexes = entry_indexes if entry_indexes is not None else list(range(len(entries)))
@@ -479,7 +470,7 @@ def split_manual_entries(
             for match in re.finditer(re.escape(PIC_TOKEN), content)
         ]
 
-        for start, end, strategy in paragraph_chunk_spans(content, chunk_size, chunk_overlap):
+        for start, end, strategy in section_chunk_spans(content, target_chars=chunk_size):
             chunks.append(
                 build_manual_chunk(
                     content=content,
@@ -537,83 +528,52 @@ def build_manual_chunk(
     )
 
 
-def paragraph_chunk_spans(
-    content: str,
-    chunk_size: int,
-    chunk_overlap: int,
-) -> list[tuple[int, int, str]]:
+def section_chunk_spans(content: str, target_chars: int = DEFAULT_CHUNK_SIZE) -> list[tuple[int, int, str]]:
+    raw_spans = raw_section_spans(content)
+    return cluster_section_spans(raw_spans, target_chars=target_chars)
+
+
+def raw_section_spans(content: str) -> list[tuple[int, int, str]]:
+    starts = [match.start() for match in HEADING_PATTERN.finditer(content)]
+    if not starts:
+        return [(0, len(content), "section_whole")]
+    if starts[0] > 0:
+        starts = [0] + starts
+
     spans: list[tuple[int, int, str]] = []
-    current_start: int | None = None
-    current_end: int | None = None
-
-    def flush_current() -> None:
-        nonlocal current_start, current_end
-        if current_start is not None and current_end is not None:
-            spans.append((current_start, current_end, "paragraph"))
-        current_start = None
-        current_end = None
-
-    for line_start, line_end in non_empty_line_spans(content):
-        if line_end - line_start > chunk_size:
-            flush_current()
-            spans.extend(
-                (start, end, "paragraph_window")
-                for start, end in split_long_span(content, line_start, line_end, chunk_size, chunk_overlap)
-            )
-            continue
-
-        if current_start is None:
-            current_start = line_start
-            current_end = line_end
-            continue
-
-        if line_end - current_start <= chunk_size:
-            current_end = line_end
-            continue
-
-        flush_current()
-        current_start = line_start
-        current_end = line_end
-
-    flush_current()
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(content)
+        while start < end and content[start].isspace():
+            start += 1
+        while end > start and content[end - 1].isspace():
+            end -= 1
+        if end > start:
+            spans.append((start, end, "section"))
     return spans
 
 
-def non_empty_line_spans(content: str) -> list[tuple[int, int]]:
-    spans: list[tuple[int, int]] = []
-    for match in re.finditer(r"[^\n\r]+(?:\r?\n)?", content):
-        line = match.group(0)
-        if line.strip():
-            spans.append((match.start(), match.end()))
-    return spans
+def cluster_section_spans(
+    spans: list[tuple[int, int, str]],
+    target_chars: int,
+) -> list[tuple[int, int, str]]:
+    if not spans:
+        return []
 
+    clustered: list[tuple[int, int, str]] = []
+    cluster_start, cluster_end, cluster_strategy = spans[0]
+    for start, end, strategy in spans[1:]:
+        cluster_length = cluster_end - cluster_start
+        merged_length = end - cluster_start
+        if cluster_length < target_chars and merged_length <= target_chars:
+            cluster_end = end
+            cluster_strategy = "section_cluster"
+            continue
 
-def split_long_span(
-    content: str,
-    start: int,
-    end: int,
-    chunk_size: int,
-    chunk_overlap: int,
-) -> list[tuple[int, int]]:
-    spans: list[tuple[int, int]] = []
-    cursor = start
-    while cursor < end:
-        limit = min(cursor + chunk_size, end)
-        split_at = limit
-        if limit < end:
-            relative_text = content[cursor:limit]
-            break_positions = [
-                relative_text.rfind(separator)
-                for separator in ("。", "！", "？", "；", ";", ".", "!", "?", "\n")
-            ]
-            best_break = max(break_positions)
-            if best_break >= chunk_size // 3:
-                split_at = cursor + best_break + 1
-        spans.append((cursor, split_at))
-        if split_at >= end:
-            break
-        cursor = max(split_at - chunk_overlap, cursor + 1)
-    return spans
+        clustered.append((cluster_start, cluster_end, cluster_strategy))
+        cluster_start, cluster_end, cluster_strategy = start, end, strategy
+
+    clustered.append((cluster_start, cluster_end, cluster_strategy))
+    return clustered
 
 
 def extract_chunk_heading(text: str) -> str:
@@ -789,38 +749,6 @@ def deserialize_chunk_metadata(
     )
 
 
-def upgrade_cache_files(cache_dir: Path = RAG_CACHE_DIR) -> int:
-    upgraded = 0
-    if not cache_dir.exists():
-        return upgraded
-
-    for cache_path in cache_dir.glob("*.pkl"):
-        try:
-            with cache_path.open("rb") as file:
-                payload = pickle.load(file)
-        except (OSError, pickle.PickleError, EOFError, AttributeError):
-            continue
-        if not isinstance(payload, dict):
-            continue
-
-        chunks = payload.get("chunks", [])
-        if chunks and isinstance(chunks[0], dict):
-            continue
-
-        payload["chunks"] = [
-            serialize_chunk(deserialize_chunk(chunk))
-            for chunk in chunks
-        ]
-        try:
-            with cache_path.open("wb") as file:
-                pickle.dump(payload, file)
-        except OSError:
-            continue
-        upgraded += 1
-
-    return upgraded
-
-
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     if not left or not right:
         return 0.0
@@ -879,14 +807,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--neighbor-count", type=int, default=0)
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
-    parser.add_argument("--chunk-overlap", type=int, default=DEFAULT_CHUNK_OVERLAP)
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--max-images-per-chunk", type=int, default=0)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--rebuild-cache", action="store_true")
     parser.add_argument("--warmup-all", action="store_true")
-    parser.add_argument("--upgrade-cache", action="store_true")
     return parser.parse_args()
 
 
@@ -897,17 +823,11 @@ def main() -> None:
         print(f"downloaded to {model_dir}")
         return
 
-    if args.upgrade_cache:
-        upgraded = upgrade_cache_files(args.cache_dir)
-        print(f"upgraded cache files={upgraded}")
-        return
-
     rag = ManualRAG(
         embedding_model_dir=args.model_dir,
         image_dir=args.image_dir,
         cache_dir=args.cache_dir,
         chunk_size=args.chunk_size,
-        chunk_overlap=args.chunk_overlap,
         batch_size=args.batch_size,
         max_images_per_chunk=args.max_images_per_chunk,
         device=args.device,

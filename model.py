@@ -10,6 +10,7 @@ from rag import (
     MANUAL_DIR as RAG_MANUAL_DIR,
     RetrievalResult,
     cosine_similarity,
+    expand_with_neighbor_chunks,
     get_default_rag,
     product_name_from_manual,
     warmup_targets,
@@ -144,6 +145,7 @@ class IntentAgent(BaseAgent):
                     manual_content=manual_match.manual_content,
                     image_names=manual_match.image_names,
                     reason="规则命中产品手册",
+                    routing_results=manual_match.routing_results,
                 )
 
         if self.routing_mode == "global_rag":
@@ -156,6 +158,7 @@ class IntentAgent(BaseAgent):
                     manual_content=rag_manual_match.manual_content,
                     image_names=rag_manual_match.image_names,
                     reason="全局RAG候选片段辅助命中产品手册",
+                    routing_results=rag_manual_match.routing_results,
                 )
         else:
             llm_manual_match = await self._match_manual_with_llm(question, manual_match)
@@ -167,6 +170,7 @@ class IntentAgent(BaseAgent):
                     manual_content=llm_manual_match.manual_content,
                     image_names=llm_manual_match.image_names,
                     reason="大模型结合手册摘要命中产品手册",
+                    routing_results=llm_manual_match.routing_results,
                 )
 
         return IntentResult(
@@ -283,10 +287,25 @@ class IntentAgent(BaseAgent):
         if not product_name:
             return None
 
-        return self._manual_match_for_product_name(product_name)
+        scored_results = []
+        for candidate in candidates:
+            if candidate["label"] == product_name:
+                scored_results = candidate.get("scored_results", [])
+                break
+
+        return self._manual_match_for_product_name(product_name, scored_results)
 
     def _global_rag_candidates(self, question: str) -> list[dict[str, Any]]:
-        results = self._global_retrieve(question, self.global_rag_top_k)
+        all_results_by_label = self._global_score_by_label(question)
+        results = sorted(
+            (
+                (label, result)
+                for label, label_results in all_results_by_label.items()
+                for result in label_results
+            ),
+            key=lambda item: item[1].score,
+            reverse=True,
+        )[: self.global_rag_top_k]
         by_label: dict[str, list[RetrievalResult]] = {}
         for label, result in results:
             by_label.setdefault(label, []).append(result)
@@ -323,14 +342,24 @@ class IntentAgent(BaseAgent):
                     "max_score": item["max_score"],
                     "avg_score": item["avg_score"],
                     "snippets": snippets,
+                    "scored_results": all_results_by_label.get(item["label"], []),
                 }
             )
         return candidates
 
     def _global_retrieve(self, question: str, top_k: int) -> list[tuple[str, RetrievalResult]]:
+        all_results_by_label = self._global_score_by_label(question)
+        best = [
+            (label, result)
+            for label, label_results in all_results_by_label.items()
+            for result in label_results
+        ]
+        return sorted(best, key=lambda item: item[1].score, reverse=True)[:top_k]
+
+    def _global_score_by_label(self, question: str) -> dict[str, list[RetrievalResult]]:
         rag = get_default_rag()
         question_vector = rag._encode_query(question)
-        best: list[tuple[str, RetrievalResult]] = []
+        by_label: dict[str, list[RetrievalResult]] = {}
 
         for index in self._global_rag_indexes():
             best_by_chunk: dict[int, RetrievalResult] = {}
@@ -343,9 +372,13 @@ class IntentAgent(BaseAgent):
                 current = best_by_chunk.get(chunk_index)
                 if current is None or score > current.score:
                     best_by_chunk[chunk_index] = RetrievalResult(chunk=chunk, score=score)
-            best.extend((index["label"], result) for result in best_by_chunk.values())
+            by_label[index["label"]] = sorted(
+                best_by_chunk.values(),
+                key=lambda item: item.score,
+                reverse=True,
+            )
 
-        return sorted(best, key=lambda item: item[1].score, reverse=True)[:top_k]
+        return by_label
 
     @staticmethod
     def _global_rag_indexes() -> list[dict[str, Any]]:
@@ -432,7 +465,11 @@ class IntentAgent(BaseAgent):
                 return label
         return ""
 
-    def _manual_match_for_product_name(self, product_name: str) -> ManualMatch | None:
+    def _manual_match_for_product_name(
+        self,
+        product_name: str,
+        routing_results: list[RetrievalResult] | None = None,
+    ) -> ManualMatch | None:
         for manual_path in self._manual_files():
             manual_name = self._product_name_from_manual(manual_path)
             if product_name == manual_name:
@@ -444,6 +481,7 @@ class IntentAgent(BaseAgent):
                     manual_path=manual_path,
                     manual_content=manual_content.content,
                     image_names=manual_content.image_names,
+                    routing_results=routing_results or [],
                 )
 
             if product_name in self.manual_sub_aliases.get(manual_name, {}):
@@ -459,6 +497,7 @@ class IntentAgent(BaseAgent):
                     manual_path=manual_path,
                     manual_content=manual_content.content,
                     image_names=manual_content.image_names,
+                    routing_results=routing_results or [],
                 )
 
         return None
@@ -629,6 +668,13 @@ class IntentAgent(BaseAgent):
 class ExpertAgent(BaseAgent):
     """Handle product manual questions with RAG context and matched images."""
 
+    def __init__(self, agent_config: AgentConfig):
+        super().__init__(agent_config)
+        agent_settings = load_config().get("agents", {}).get("expert", {})
+        retrieval_settings = agent_settings.get("retrieval", {})
+        self.retrieval_top_k = int(retrieval_settings.get("top_k", 6))
+        self.retrieval_neighbor_count = int(retrieval_settings.get("neighbor_count", 1))
+
     async def reply(self, history: List[ChatMessage], intent: IntentResult) -> str:
         if intent.manual_path is None:
             return await self._fallback_expert_reply(history, intent)
@@ -703,13 +749,37 @@ class ExpertAgent(BaseAgent):
         self,
         question: str,
         intent: IntentResult,
+        top_k: int | None = None,
+        neighbor_count: int | None = None,
     ) -> List[RetrievalResult]:
+        top_k = self.retrieval_top_k if top_k is None else top_k
+        neighbor_count = self.retrieval_neighbor_count if neighbor_count is None else neighbor_count
+
+        if intent.routing_results:
+            top_results = sorted(
+                intent.routing_results,
+                key=lambda item: item.score,
+                reverse=True,
+            )[:top_k]
+            chunks = [
+                result.chunk
+                for result in sorted(
+                    intent.routing_results,
+                    key=lambda item: (
+                        item.chunk.entry_index,
+                        item.chunk.start,
+                        item.chunk.end,
+                    ),
+                )
+            ]
+            return expand_with_neighbor_chunks(top_results, chunks, neighbor_count)
+
         return get_default_rag().retrieve(
             question=question,
             manual_path=intent.manual_path,
             product_name=intent.product_name,
-            top_k=6,
-            neighbor_count=1,
+            top_k=top_k,
+            neighbor_count=neighbor_count,
         )
 
     async def _call_expert_model_with_retry(
