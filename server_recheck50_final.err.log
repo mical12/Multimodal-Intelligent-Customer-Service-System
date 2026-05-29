@@ -1,0 +1,11 @@
+INFO:     Started server process [36772]
+INFO:     Waiting for application startup.
+Loading weights:   0%|          | 0/625 [00:00<?, ?it/s]Loading weights: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 625/625 [00:00<00:00, 7112.87it/s]
+Default prompt name is set to 'default'. This prompt will be applied to all inference calls, except if a `prompt` or `prompt_name` parameter is provided.
+<unknown>:1: SyntaxWarning: invalid escape sequence '\*'
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/310 [00:00<?, ?it/s]Loading weights:   0%|          | 1/310 [00:00<01:08,  4.49it/s]Loading weights:  75%|¨€¨€¨€¨€¨€¨€¨€¨„  | 234/310 [00:00<00:00, 912.77it/s]Loading weights: 100%|¨€¨€¨€¨€¨€¨€¨€¨€¨€¨€| 310/310 [00:00<00:00, 702.16it/s]
+D:\anaconda3\envs\work\Lib\site-packages\transformers\tokenization_utils_base.py:2356: UserWarning: `max_length` is ignored when `padding`=`True` and there is no truncation strategy. To pad to max length, use `padding='max_length'`.
+  warnings.warn(

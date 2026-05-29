@@ -827,6 +827,7 @@ class ExpertAgent(BaseAgent):
         agent_settings = load_config().get("agents", {}).get("expert", {})
         retrieval_settings = agent_settings.get("retrieval", {})
         self.retrieval_top_k = int(retrieval_settings.get("top_k", 6))
+        self.retrieval_neighbor_count = int(retrieval_settings.get("neighbor_count", 0))
         self.retrieval_candidate_top_k = int(
             retrieval_settings.get("candidate_top_k", self.retrieval_top_k)
         )
@@ -929,6 +930,7 @@ class ExpertAgent(BaseAgent):
                 embedding_top_k=self.retrieval_candidate_top_k,
                 bm25_top_k=self.retrieval_bm25_top_k,
                 final_top_k=top_k,
+                neighbor_count=self.retrieval_neighbor_count,
                 reranker_model_dir=self.reranker_model_dir,
                 reranker_max_length=self.reranker_max_length,
                 reranker_batch_size=self.reranker_batch_size,
@@ -939,6 +941,7 @@ class ExpertAgent(BaseAgent):
             manual_path=intent.manual_path,
             product_name=intent.product_name,
             top_k=top_k,
+            neighbor_count=self.retrieval_neighbor_count,
         )
 
     async def _call_expert_model_with_retry(

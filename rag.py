@@ -195,6 +195,7 @@ class ManualRAG:
         manual_path: Path,
         product_name: str | None = None,
         top_k: int = 5,
+        neighbor_count: int = 0,
         rebuild_cache: bool = False,
     ) -> list[RetrievalResult]:
         index = self.load_or_build_index(
@@ -218,7 +219,10 @@ class ManualRAG:
             if current is None or score > current.score:
                 best_by_chunk[chunk_index] = RetrievalResult(chunk=chunk, score=score)
 
-        return sorted(best_by_chunk.values(), key=lambda item: item.score, reverse=True)[:top_k]
+        results = sorted(best_by_chunk.values(), key=lambda item: item.score, reverse=True)[:top_k]
+        if neighbor_count > 0:
+            return expand_with_adjacent_child_chunks(results, chunks, neighbor_count)
+        return results
 
     def retrieve_with_bm25_rerank(
         self,
@@ -229,6 +233,7 @@ class ManualRAG:
         embedding_top_k: int = 10,
         bm25_top_k: int = 10,
         final_top_k: int = 4,
+        neighbor_count: int = 0,
         reranker_model_dir: Path = DEFAULT_RERANKER_MODEL_DIR,
         reranker_max_length: int = DEFAULT_RERANKER_MAX_LENGTH,
         reranker_batch_size: int = DEFAULT_RERANKER_BATCH_SIZE,
@@ -260,10 +265,15 @@ class ManualRAG:
             key=lambda item: item[1],
             reverse=True,
         )
-        return [
+        results = [
             RetrievalResult(chunk=result.chunk, score=float(score))
             for result, score in reranked[:final_top_k]
         ]
+        if neighbor_count > 0:
+            index = self.load_or_build_index(manual_path=manual_path, product_name=product_name)
+            chunks: list[ManualChunk] = index["chunks"]
+            return expand_with_adjacent_child_chunks(results, chunks, neighbor_count)
+        return results
 
     def retrieve_bm25(
         self,
@@ -1176,6 +1186,64 @@ def merge_retrieval_results(
     for result in secondary:
         merged.setdefault(retrieval_key(result), result)
     return list(merged.values())
+
+
+def expand_with_adjacent_child_chunks(
+    results: list[RetrievalResult],
+    chunks: list[ManualChunk],
+    neighbor_count: int,
+) -> list[RetrievalResult]:
+    if neighbor_count <= 0 or not results:
+        return results
+
+    child_lookup: dict[tuple[int, int, int, int], ManualChunk] = {}
+    for chunk in chunks:
+        metadata = chunk.metadata
+        if metadata is None:
+            continue
+        parent_start = metadata.parent_start if metadata.parent_start is not None else chunk.start
+        parent_end = metadata.parent_end if metadata.parent_end is not None else chunk.end
+        child_lookup[
+            (
+                chunk.entry_index,
+                parent_start,
+                parent_end,
+                metadata.child_index,
+            )
+        ] = chunk
+
+    expanded: list[RetrievalResult] = []
+    seen: set[tuple[int, int, int]] = set()
+    for result in results:
+        group = [result]
+        metadata = result.chunk.metadata
+        if metadata is not None and metadata.child_count > 1:
+            parent_start = metadata.parent_start if metadata.parent_start is not None else result.chunk.start
+            parent_end = metadata.parent_end if metadata.parent_end is not None else result.chunk.end
+            start_index = max(0, metadata.child_index - neighbor_count)
+            end_index = min(metadata.child_count - 1, metadata.child_index + neighbor_count)
+            for child_index in range(start_index, end_index + 1):
+                neighbor = child_lookup.get(
+                    (
+                        result.chunk.entry_index,
+                        parent_start,
+                        parent_end,
+                        child_index,
+                    )
+                )
+                if neighbor is None:
+                    continue
+                group.append(RetrievalResult(chunk=neighbor, score=result.score))
+
+        group.sort(key=lambda item: (item.chunk.entry_index, item.chunk.start, item.chunk.end))
+        for item in group:
+            key = retrieval_key(item)
+            if key in seen:
+                continue
+            seen.add(key)
+            expanded.append(item)
+
+    return expanded
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:

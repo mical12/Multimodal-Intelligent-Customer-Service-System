@@ -44,7 +44,31 @@ def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
-async def run_direct(questions: list[dict[str, str]]) -> list[dict[str, str]]:
+def append_row(path: Path, row: dict[str, str]) -> None:
+    fieldnames = [
+        "id",
+        "question",
+        "mode",
+        "status",
+        "elapsed",
+        "agent_type",
+        "product_name",
+        "manual_name",
+        "ret",
+        "error",
+    ]
+    exists = path.exists()
+    with path.open("a", encoding="utf-8-sig", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        if not exists:
+            writer.writeheader()
+        writer.writerow(row)
+
+
+async def run_direct(
+    questions: list[dict[str, str]],
+    output_path: Path | None = None,
+) -> list[dict[str, str]]:
     from model import generate_reply, intent_agent
 
     results = []
@@ -85,6 +109,8 @@ async def run_direct(questions: list[dict[str, str]]) -> list[dict[str, str]]:
             }
         print_result(result)
         results.append(result)
+        if output_path is not None:
+            append_row(output_path, result)
     return results
 
 
@@ -92,6 +118,7 @@ async def run_http(
     questions: list[dict[str, str]],
     api_url: str,
     timeout_seconds: float,
+    output_path: Path | None = None,
 ) -> list[dict[str, str]]:
     results = []
     timeout = httpx.Timeout(timeout_seconds, connect=10.0)
@@ -145,6 +172,8 @@ async def run_http(
                 }
             print_result(result)
             results.append(result)
+            if output_path is not None:
+                append_row(output_path, result)
     return results
 
 
@@ -160,7 +189,8 @@ def print_result(row: dict[str, str]) -> None:
     if row["error"]:
         print(f"error={row['error']}")
     else:
-        print(f"ret={row['ret'][:800].replace(chr(10), ' ')}")
+        preview = row["ret"][:800].replace(chr(10), " ")
+        print(f"ret={preview.encode('gbk', errors='replace').decode('gbk')}")
 
 
 def parse_args():
@@ -180,12 +210,13 @@ async def main():
     if not questions:
         raise RuntimeError("没有找到要测试的问题 id")
 
-    if args.mode == "direct":
-        rows = await run_direct(questions)
-    else:
-        rows = await run_http(questions, args.api_url, args.timeout)
+    if args.output.exists():
+        args.output.unlink()
 
-    write_rows(args.output, rows)
+    if args.mode == "direct":
+        rows = await run_direct(questions, args.output)
+    else:
+        rows = await run_http(questions, args.api_url, args.timeout, args.output)
     print(f"saved to {args.output}")
 
 
