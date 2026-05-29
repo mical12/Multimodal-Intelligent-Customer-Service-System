@@ -15,17 +15,29 @@ IMAGE_DIR = MANUAL_DIR / "插图"
 RAG_CACHE_DIR = MANUAL_DIR / "rag_cache"
 MANUAL_ALIAS_PATH = BASE_DIR / "manual_aliases.yaml"
 
-DEFAULT_EMBEDDING_MODEL_NAME = "Qwen/Qwen3-VL-Embedding-2B"
 DEFAULT_EMBEDDING_MODEL_DIR = BASE_DIR / "Qwen3-VL-Embedding-2B"
+DEFAULT_RERANKER_MODEL_DIR = BASE_DIR / "Qwen3-Reranker-0.6B" / "models" / "Qwen3-Reranker-0.6B"
 DEFAULT_CHUNK_SIZE = 512
 DEFAULT_BATCH_SIZE = 4
+DEFAULT_RERANKER_BATCH_SIZE = 2
+DEFAULT_RERANKER_MAX_LENGTH = 1024
+MIN_STANDALONE_SECTION_CHARS = 100
 DEFAULT_QUERY_PROMPT = "Retrieve relevant product manual passages for the user's question."
+DEFAULT_RERANK_INSTRUCTION = (
+    "Given a product manual question, retrieve the manual passage that contains "
+    "the information needed to answer the user's question."
+)
 ENGLISH_SUMMARY_PRODUCT = "英文汇总"
 MANUAL_SUFFIX = "手册"
 PIC_TOKEN = "<PIC>"
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
 CACHE_VERSION = 3
 HEADING_PATTERN = re.compile(r"(?<!\S)#\s+")
+TOC_DOT_LEADER_PATTERN = re.compile(r"\.{6,}")
+SENTENCE_END_PATTERN = re.compile(r"[。！？!?]|(?<!\d)\.(?!\d)")
+
+
+BM25_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*|[\u4e00-\u9fff]")
 
 
 @dataclass
@@ -43,6 +55,10 @@ class ChunkMetaData:
     image_count: int
     chunking_strategy: str
     heading: str = ""
+    parent_start: int | None = None
+    parent_end: int | None = None
+    child_index: int = 0
+    child_count: int = 1
 
 
 @dataclass
@@ -62,6 +78,78 @@ class RetrievalResult:
     score: float
 
 
+class QwenReranker:
+    def __init__(
+        self,
+        model_dir: Path = DEFAULT_RERANKER_MODEL_DIR,
+        max_length: int = DEFAULT_RERANKER_MAX_LENGTH,
+        batch_size: int = DEFAULT_RERANKER_BATCH_SIZE,
+    ) -> None:
+        if not model_dir.exists():
+            raise FileNotFoundError(f"reranker model not found: {model_dir}")
+
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        self.torch = torch
+        self.max_length = max_length
+        self.batch_size = batch_size
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            str(model_dir),
+            padding_side="left",
+            local_files_only=True,
+        )
+        self.model = AutoModelForCausalLM.from_pretrained(
+            str(model_dir),
+            local_files_only=True,
+            torch_dtype=torch.float32,
+        ).eval()
+        self.token_false_id = self.tokenizer.convert_tokens_to_ids("no")
+        self.token_true_id = self.tokenizer.convert_tokens_to_ids("yes")
+        self.prefix = (
+            '<|im_start|>system\nJudge whether the Document meets the requirements based on '
+            'the Query and the Instruct provided. Note that the answer can only be "yes" or "no".'
+            "<|im_end|>\n<|im_start|>user\n"
+        )
+        self.suffix = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+        self.prefix_tokens = self.tokenizer.encode(self.prefix, add_special_tokens=False)
+        self.suffix_tokens = self.tokenizer.encode(self.suffix, add_special_tokens=False)
+
+    def score(
+        self,
+        question: str,
+        documents: list[str],
+        instruction: str = DEFAULT_RERANK_INSTRUCTION,
+    ) -> list[float]:
+        pairs = [
+            f"<Instruct>: {instruction}\n<Query>: {question}\n<Document>: {normalize_rerank_text(document)}"
+            for document in documents
+        ]
+        scores: list[float] = []
+        for start in range(0, len(pairs), self.batch_size):
+            scores.extend(self._score_batch(pairs[start : start + self.batch_size]))
+        return scores
+
+    def _score_batch(self, pairs: list[str]) -> list[float]:
+        with self.torch.no_grad():
+            budget = self.max_length - len(self.prefix_tokens) - len(self.suffix_tokens)
+            inputs = self.tokenizer(
+                pairs,
+                padding=False,
+                truncation="longest_first",
+                return_attention_mask=False,
+                max_length=budget,
+            )
+            for index, input_ids in enumerate(inputs["input_ids"]):
+                inputs["input_ids"][index] = self.prefix_tokens + input_ids + self.suffix_tokens
+            inputs = self.tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=self.max_length)
+            outputs = self.model(**inputs).logits[:, -1, :]
+            true_vector = outputs[:, self.token_true_id]
+            false_vector = outputs[:, self.token_false_id]
+            logits = self.torch.stack([false_vector, true_vector], dim=1)
+            return self.torch.nn.functional.log_softmax(logits, dim=1)[:, 1].exp().tolist()
+
+
 _default_rag: "ManualRAG | None" = None
 
 
@@ -71,25 +159,6 @@ def get_default_rag() -> "ManualRAG":
     if _default_rag is None:
         _default_rag = ManualRAG()
     return _default_rag
-
-
-def download_embedding_model(
-    model_name: str = DEFAULT_EMBEDDING_MODEL_NAME,
-    model_dir: Path = DEFAULT_EMBEDDING_MODEL_DIR,
-) -> Path:
-    """Download Qwen3-VL-Embedding into this project directory."""
-    try:
-        from huggingface_hub import snapshot_download
-    except ImportError as exc:
-        raise RuntimeError("缺少 huggingface_hub，请先安装：pip install huggingface-hub") from exc
-
-    model_dir.parent.mkdir(parents=True, exist_ok=True)
-    snapshot_download(
-        repo_id=model_name,
-        local_dir=str(model_dir),
-        local_dir_use_symlinks=False,
-    )
-    return model_dir
 
 
 class ManualRAG:
@@ -118,6 +187,7 @@ class ManualRAG:
         self.query_prompt = query_prompt
         self.device = device
         self._embedder: Any | None = None
+        self._reranker: QwenReranker | None = None
 
     def retrieve(
         self,
@@ -125,7 +195,6 @@ class ManualRAG:
         manual_path: Path,
         product_name: str | None = None,
         top_k: int = 5,
-        neighbor_count: int = 0,
         rebuild_cache: bool = False,
     ) -> list[RetrievalResult]:
         index = self.load_or_build_index(
@@ -149,10 +218,103 @@ class ManualRAG:
             if current is None or score > current.score:
                 best_by_chunk[chunk_index] = RetrievalResult(chunk=chunk, score=score)
 
-        top_results = sorted(best_by_chunk.values(), key=lambda item: item.score, reverse=True)[:top_k]
-        if neighbor_count <= 0:
-            return top_results
-        return expand_with_neighbor_chunks(top_results, chunks, neighbor_count)
+        return sorted(best_by_chunk.values(), key=lambda item: item.score, reverse=True)[:top_k]
+
+    def retrieve_with_bm25_rerank(
+        self,
+        question: str,
+        manual_path: Path,
+        product_name: str | None = None,
+        *,
+        embedding_top_k: int = 10,
+        bm25_top_k: int = 10,
+        final_top_k: int = 4,
+        reranker_model_dir: Path = DEFAULT_RERANKER_MODEL_DIR,
+        reranker_max_length: int = DEFAULT_RERANKER_MAX_LENGTH,
+        reranker_batch_size: int = DEFAULT_RERANKER_BATCH_SIZE,
+    ) -> list[RetrievalResult]:
+        embedding_results = self.retrieve(
+            question=question,
+            manual_path=manual_path,
+            product_name=product_name,
+            top_k=embedding_top_k,
+        )
+        bm25_results = self.retrieve_bm25(
+            question=question,
+            manual_path=manual_path,
+            product_name=product_name,
+            top_k=bm25_top_k,
+        )
+        candidates = merge_retrieval_results(embedding_results, bm25_results)
+        if not candidates:
+            return []
+
+        reranker = self._get_reranker(
+            model_dir=reranker_model_dir,
+            max_length=reranker_max_length,
+            batch_size=reranker_batch_size,
+        )
+        scores = reranker.score(question, [result.chunk.text for result in candidates])
+        reranked = sorted(
+            zip(candidates, scores, strict=False),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        return [
+            RetrievalResult(chunk=result.chunk, score=float(score))
+            for result, score in reranked[:final_top_k]
+        ]
+
+    def retrieve_bm25(
+        self,
+        question: str,
+        manual_path: Path,
+        product_name: str | None = None,
+        top_k: int = 10,
+    ) -> list[RetrievalResult]:
+        if top_k <= 0:
+            return []
+        index = self.load_or_build_index(manual_path=manual_path, product_name=product_name)
+        chunks: list[ManualChunk] = index["chunks"]
+        if not chunks:
+            return []
+
+        tokenized_chunks = [tokenize_for_bm25(chunk.text) for chunk in chunks]
+        query_tokens = tokenize_for_bm25(question)
+        if not query_tokens:
+            return []
+
+        doc_freq: dict[str, int] = {}
+        for tokens in tokenized_chunks:
+            for token in set(tokens):
+                doc_freq[token] = doc_freq.get(token, 0) + 1
+
+        avgdl = sum(len(tokens) for tokens in tokenized_chunks) / max(len(tokenized_chunks), 1)
+        total_docs = len(tokenized_chunks)
+        query_unique = set(query_tokens)
+        k1 = 1.5
+        b = 0.75
+        results: list[RetrievalResult] = []
+        for chunk, tokens in zip(chunks, tokenized_chunks, strict=False):
+            if not tokens:
+                continue
+            term_freq: dict[str, int] = {}
+            for token in tokens:
+                if token in query_unique:
+                    term_freq[token] = term_freq.get(token, 0) + 1
+            if not term_freq:
+                continue
+
+            score = 0.0
+            length_norm = k1 * (1 - b + b * len(tokens) / max(avgdl, 1))
+            for token, freq in term_freq.items():
+                df = doc_freq.get(token, 0)
+                idf = math.log(1 + (total_docs - df + 0.5) / (df + 0.5))
+                score += idf * (freq * (k1 + 1)) / (freq + length_norm)
+            if score > 0:
+                results.append(RetrievalResult(chunk=chunk, score=score))
+
+        return sorted(results, key=lambda item: item.score, reverse=True)[:top_k]
 
     def load_or_build_index(
         self,
@@ -160,6 +322,7 @@ class ManualRAG:
         product_name: str | None = None,
         rebuild_cache: bool = False,
     ) -> dict[str, Any]:
+        product_name = cache_product_name(manual_path, product_name)
         entries = load_manual_entries(manual_path)
         entry_indexes = selected_entry_indexes(manual_path, product_name, len(entries))
         chunks = split_manual_entries(
@@ -195,6 +358,7 @@ class ManualRAG:
 
     def build_chunks(self, manual_path: Path, product_name: str | None = None) -> list[ManualChunk]:
         """Expose chunking for quick checks without loading the embedding model."""
+        product_name = cache_product_name(manual_path, product_name)
         entries = load_manual_entries(manual_path)
         return split_manual_entries(
             entries,
@@ -282,7 +446,7 @@ class ManualRAG:
         if not self.embedding_model_dir.exists():
             raise FileNotFoundError(
                 f"未找到本地 Qwen3-VL-Embedding 模型：{self.embedding_model_dir}\n"
-                "可执行：python rag.py --download-model"
+                "请通过 --model-dir 指定正确的本地模型目录。"
             )
 
         try:
@@ -294,7 +458,22 @@ class ManualRAG:
 
         return SentenceTransformer(str(self.embedding_model_dir), device=self.device)
 
+    def _get_reranker(
+        self,
+        model_dir: Path,
+        max_length: int,
+        batch_size: int,
+    ) -> QwenReranker:
+        if self._reranker is None:
+            self._reranker = QwenReranker(
+                model_dir=model_dir,
+                max_length=max_length,
+                batch_size=batch_size,
+            )
+        return self._reranker
+
     def _cache_path(self, manual_path: Path, product_name: str | None) -> Path:
+        product_name = cache_product_name(manual_path, product_name)
         product_part = product_name or "all"
         key = "|".join(
             [
@@ -316,6 +495,7 @@ class ManualRAG:
         entry_indexes: list[int],
         chunks: list[ManualChunk],
     ) -> dict[str, Any]:
+        product_name = cache_product_name(manual_path, product_name)
         stat = manual_path.stat()
         return {
             "cache_version": CACHE_VERSION,
@@ -421,6 +601,12 @@ def selected_entry_indexes(
     return [entry_index]
 
 
+def cache_product_name(manual_path: Path, product_name: str | None) -> str | None:
+    if product_name_from_manual(manual_path) == ENGLISH_SUMMARY_PRODUCT:
+        return product_name
+    return None
+
+
 def english_summary_entry_index(product_name: str) -> int | None:
     product_names = english_summary_product_names()
     try:
@@ -470,7 +656,8 @@ def split_manual_entries(
             for match in re.finditer(re.escape(PIC_TOKEN), content)
         ]
 
-        for start, end, strategy in section_chunk_spans(content, target_chars=chunk_size):
+        for span in section_chunk_spans(content, target_chars=chunk_size):
+            start, end, strategy, parent_start, parent_end, child_index, child_count = span
             chunks.append(
                 build_manual_chunk(
                     content=content,
@@ -478,6 +665,10 @@ def split_manual_entries(
                     start=start,
                     end=end,
                     strategy=strategy,
+                    parent_start=parent_start,
+                    parent_end=parent_end,
+                    child_index=child_index,
+                    child_count=child_count,
                     entry_image_names=entry.image_names,
                     pic_positions=pic_positions,
                     image_dir=image_dir,
@@ -493,6 +684,10 @@ def build_manual_chunk(
     start: int,
     end: int,
     strategy: str,
+    parent_start: int,
+    parent_end: int,
+    child_index: int,
+    child_count: int,
     entry_image_names: list[str],
     pic_positions: list[int],
     image_dir: Path,
@@ -516,6 +711,10 @@ def build_manual_chunk(
         image_count=len(image_names),
         chunking_strategy=strategy,
         heading=extract_chunk_heading(content[start:end]),
+        parent_start=parent_start,
+        parent_end=parent_end,
+        child_index=child_index,
+        child_count=child_count,
     )
     return ManualChunk(
         text=content[start:end],
@@ -528,19 +727,46 @@ def build_manual_chunk(
     )
 
 
-def section_chunk_spans(content: str, target_chars: int = DEFAULT_CHUNK_SIZE) -> list[tuple[int, int, str]]:
+ChunkSpan = tuple[int, int, str, int, int, int, int]
+
+
+def make_chunk_span(
+    start: int,
+    end: int,
+    strategy: str,
+    parent_start: int | None = None,
+    parent_end: int | None = None,
+    child_index: int = 0,
+    child_count: int = 1,
+) -> ChunkSpan:
+    return (
+        start,
+        end,
+        strategy,
+        start if parent_start is None else parent_start,
+        end if parent_end is None else parent_end,
+        child_index,
+        child_count,
+    )
+
+
+def section_chunk_spans(content: str, target_chars: int = DEFAULT_CHUNK_SIZE) -> list[ChunkSpan]:
     raw_spans = raw_section_spans(content)
-    return cluster_section_spans(raw_spans, target_chars=target_chars)
+    raw_spans = merge_tiny_section_spans(raw_spans, content, min_chars=MIN_STANDALONE_SECTION_CHARS)
+    raw_spans = drop_table_of_contents_spans(raw_spans, content)
+    raw_spans = merge_tiny_section_spans(raw_spans, content, min_chars=MIN_STANDALONE_SECTION_CHARS)
+    clustered_spans = cluster_section_spans(raw_spans, target_chars=target_chars)
+    return split_long_spans_by_sentence(clustered_spans, content, target_chars=target_chars)
 
 
-def raw_section_spans(content: str) -> list[tuple[int, int, str]]:
+def raw_section_spans(content: str) -> list[ChunkSpan]:
     starts = [match.start() for match in HEADING_PATTERN.finditer(content)]
     if not starts:
-        return [(0, len(content), "section_whole")]
+        return [make_chunk_span(0, len(content), "section_whole")]
     if starts[0] > 0:
         starts = [0] + starts
 
-    spans: list[tuple[int, int, str]] = []
+    spans: list[ChunkSpan] = []
     for index, start in enumerate(starts):
         end = starts[index + 1] if index + 1 < len(starts) else len(content)
         while start < end and content[start].isspace():
@@ -548,20 +774,82 @@ def raw_section_spans(content: str) -> list[tuple[int, int, str]]:
         while end > start and content[end - 1].isspace():
             end -= 1
         if end > start:
-            spans.append((start, end, "section"))
+            spans.append(make_chunk_span(start, end, "section"))
     return spans
 
 
+def drop_table_of_contents_spans(
+    spans: list[ChunkSpan],
+    content: str,
+) -> list[ChunkSpan]:
+    return [
+        span
+        for span in spans
+        for start, end, *_ in [span]
+        if not is_table_of_contents_text(content[start:end])
+    ]
+
+
+def is_table_of_contents_text(text: str) -> bool:
+    dot_leader_count = len(TOC_DOT_LEADER_PATTERN.findall(text))
+    if dot_leader_count < 8:
+        return False
+
+    normalized = " ".join(text.casefold().split())
+    return (
+        "contents" in normalized
+        or "table of contents" in normalized
+        or "目录" in normalized
+        or dot_leader_count >= 15
+    )
+
+
+def merge_tiny_section_spans(
+    spans: list[ChunkSpan],
+    content: str,
+    min_chars: int,
+) -> list[ChunkSpan]:
+    if len(spans) <= 1:
+        return spans
+
+    merged: list[ChunkSpan] = []
+    pending_start: int | None = None
+
+    for index, span in enumerate(spans):
+        start, end, strategy, *_ = span
+        if pending_start is not None:
+            start = pending_start
+            strategy = "section_tiny_merged"
+            pending_start = None
+
+        text_length = len(" ".join(content[start:end].replace(PIC_TOKEN, " ").split()))
+        if text_length < min_chars:
+            if index == len(spans) - 1:
+                if merged:
+                    previous_start = merged[-1][0]
+                    merged[-1] = make_chunk_span(previous_start, end, "section_tiny_merged")
+                else:
+                    merged.append(make_chunk_span(start, end, strategy))
+            else:
+                pending_start = start
+            continue
+
+        merged.append(make_chunk_span(start, end, strategy))
+
+    return merged
+
+
 def cluster_section_spans(
-    spans: list[tuple[int, int, str]],
+    spans: list[ChunkSpan],
     target_chars: int,
-) -> list[tuple[int, int, str]]:
+) -> list[ChunkSpan]:
     if not spans:
         return []
 
-    clustered: list[tuple[int, int, str]] = []
-    cluster_start, cluster_end, cluster_strategy = spans[0]
-    for start, end, strategy in spans[1:]:
+    clustered: list[ChunkSpan] = []
+    cluster_start, cluster_end, cluster_strategy, *_ = spans[0]
+    for span in spans[1:]:
+        start, end, strategy, *_ = span
         cluster_length = cluster_end - cluster_start
         merged_length = end - cluster_start
         if cluster_length < target_chars and merged_length <= target_chars:
@@ -569,11 +857,159 @@ def cluster_section_spans(
             cluster_strategy = "section_cluster"
             continue
 
-        clustered.append((cluster_start, cluster_end, cluster_strategy))
+        clustered.append(make_chunk_span(cluster_start, cluster_end, cluster_strategy))
         cluster_start, cluster_end, cluster_strategy = start, end, strategy
 
-    clustered.append((cluster_start, cluster_end, cluster_strategy))
+    clustered.append(make_chunk_span(cluster_start, cluster_end, cluster_strategy))
     return clustered
+
+
+def split_long_spans_by_sentence(
+    spans: list[ChunkSpan],
+    content: str,
+    target_chars: int,
+) -> list[ChunkSpan]:
+    split_spans: list[ChunkSpan] = []
+    for span in spans:
+        start, end, strategy, *_ = span
+        if end - start <= target_chars:
+            split_spans.append(make_chunk_span(start, end, strategy))
+            continue
+
+        sentence_spans = sentence_spans_for_range(content, start, end)
+        if len(sentence_spans) <= 1:
+            split_spans.append(make_chunk_span(start, end, strategy))
+            continue
+
+        parent_start, parent_end = start, end
+        child_spans: list[tuple[int, int]] = []
+        chunk_start, chunk_end = sentence_spans[0]
+        for sentence_start, sentence_end in sentence_spans[1:]:
+            merged_length = sentence_end - chunk_start
+            if chunk_end > chunk_start and merged_length > target_chars:
+                child_spans.append((chunk_start, chunk_end))
+                chunk_start, chunk_end = sentence_start, sentence_end
+            else:
+                chunk_end = sentence_end
+
+        child_spans.append((chunk_start, chunk_end))
+        child_spans = merge_short_child_ranges(child_spans, content, MIN_STANDALONE_SECTION_CHARS)
+        for child_index, (child_start, child_end) in enumerate(child_spans):
+            split_spans.append(
+                make_chunk_span(
+                    child_start,
+                    child_end,
+                    "section_sentence_split",
+                    parent_start=parent_start,
+                    parent_end=parent_end,
+                    child_index=child_index,
+                    child_count=len(child_spans),
+                )
+            )
+
+    return split_oversized_spans_by_whitespace(split_spans, content, target_chars=target_chars)
+
+
+def split_oversized_spans_by_whitespace(
+    spans: list[ChunkSpan],
+    content: str,
+    target_chars: int,
+) -> list[ChunkSpan]:
+    split_spans: list[ChunkSpan] = []
+    for span in spans:
+        start, end, strategy, parent_start, parent_end, _, _ = span
+        if end - start <= target_chars:
+            split_spans.append(span)
+            continue
+
+        child_spans: list[tuple[int, int]] = []
+        chunk_start = start
+        while end - chunk_start > target_chars:
+            split_at = content.rfind(" ", chunk_start, chunk_start + target_chars + 1)
+            if split_at <= chunk_start:
+                split_at = chunk_start + target_chars
+            while split_at > chunk_start and content[split_at - 1].isspace():
+                split_at -= 1
+            if split_at <= chunk_start:
+                split_at = min(chunk_start + target_chars, end)
+            child_spans.append((chunk_start, split_at))
+            chunk_start = split_at
+            while chunk_start < end and content[chunk_start].isspace():
+                chunk_start += 1
+
+        if chunk_start < end:
+            child_spans.append((chunk_start, end))
+
+        child_spans = merge_short_child_ranges(child_spans, content, MIN_STANDALONE_SECTION_CHARS)
+        for child_index, (child_start, child_end) in enumerate(child_spans):
+            split_spans.append(
+                make_chunk_span(
+                    child_start,
+                    child_end,
+                    "section_word_split",
+                    parent_start=parent_start,
+                    parent_end=parent_end,
+                    child_index=child_index,
+                    child_count=len(child_spans),
+                )
+            )
+
+    return split_spans
+
+
+def merge_short_child_ranges(
+    ranges: list[tuple[int, int]],
+    content: str,
+    min_chars: int,
+) -> list[tuple[int, int]]:
+    if len(ranges) <= 1:
+        return ranges
+
+    merged: list[tuple[int, int]] = []
+    index = 0
+    while index < len(ranges):
+        start, end = ranges[index]
+        text_length = len(" ".join(content[start:end].replace(PIC_TOKEN, " ").split()))
+        if text_length >= min_chars:
+            merged.append((start, end))
+            index += 1
+            continue
+
+        if index + 1 < len(ranges):
+            _, next_end = ranges[index + 1]
+            merged.append((start, next_end))
+            index += 2
+            continue
+
+        if merged:
+            previous_start, _ = merged[-1]
+            merged[-1] = (previous_start, end)
+        else:
+            merged.append((start, end))
+        index += 1
+
+    return merged
+
+
+def sentence_spans_for_range(content: str, start: int, end: int) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    sentence_start = start
+    for match in SENTENCE_END_PATTERN.finditer(content, start, end):
+        sentence_end = match.end()
+        while sentence_end < end and content[sentence_end].isspace():
+            sentence_end += 1
+        if sentence_end > sentence_start:
+            spans.append((sentence_start, sentence_end))
+        sentence_start = sentence_end
+
+    if sentence_start < end:
+        spans.append((sentence_start, end))
+
+    return [
+        (span_start, span_end)
+        for span_start, span_end in spans
+        if content[span_start:span_end].strip()
+    ]
 
 
 def extract_chunk_heading(text: str) -> str:
@@ -624,53 +1060,6 @@ def image_fingerprints(chunks: list[ManualChunk]) -> list[tuple[str, int, int]]:
     return fingerprints
 
 
-def expand_with_neighbor_chunks(
-    top_results: list[RetrievalResult],
-    chunks: list[ManualChunk],
-    neighbor_count: int,
-) -> list[RetrievalResult]:
-    chunk_positions = {
-        chunk_key(chunk): index
-        for index, chunk in enumerate(chunks)
-    }
-    top_scores = {
-        chunk_key(result.chunk): result.score
-        for result in top_results
-    }
-
-    selected_indexes: set[int] = set()
-    for result in top_results:
-        center_index = chunk_positions.get(chunk_key(result.chunk))
-        if center_index is None:
-            continue
-        entry_index = result.chunk.entry_index
-        for offset in range(-neighbor_count, neighbor_count + 1):
-            candidate_index = center_index + offset
-            if candidate_index < 0 or candidate_index >= len(chunks):
-                continue
-            if chunks[candidate_index].entry_index != entry_index:
-                continue
-            selected_indexes.add(candidate_index)
-
-    expanded_results = []
-    for index in sorted(
-        selected_indexes,
-        key=lambda item: (chunks[item].entry_index, chunks[item].start, chunks[item].end),
-    ):
-        chunk = chunks[index]
-        expanded_results.append(
-            RetrievalResult(
-                chunk=chunk,
-                score=top_scores.get(chunk_key(chunk), 0.0),
-            )
-        )
-    return expanded_results
-
-
-def chunk_key(chunk: ManualChunk) -> tuple[int, int, int]:
-    return (chunk.entry_index, chunk.start, chunk.end)
-
-
 def serialize_chunk(chunk: ManualChunk) -> dict[str, Any]:
     return {
         "text": chunk.text,
@@ -717,6 +1106,10 @@ def serialize_chunk_metadata(metadata: ChunkMetaData | None) -> dict[str, Any] |
         "image_count": metadata.image_count,
         "chunking_strategy": metadata.chunking_strategy,
         "heading": metadata.heading,
+        "parent_start": metadata.parent_start,
+        "parent_end": metadata.parent_end,
+        "child_index": metadata.child_index,
+        "child_count": metadata.child_count,
     }
 
 
@@ -736,6 +1129,10 @@ def deserialize_chunk_metadata(
             image_count=len(image_names) if isinstance(image_names, list) else 0,
             chunking_strategy="legacy",
             heading="",
+            parent_start=start,
+            parent_end=end,
+            child_index=0,
+            child_count=1,
         )
 
     return ChunkMetaData(
@@ -746,7 +1143,39 @@ def deserialize_chunk_metadata(
         image_count=int(metadata.get("image_count", 0)),
         chunking_strategy=str(metadata.get("chunking_strategy", "")),
         heading=str(metadata.get("heading", "")),
+        parent_start=int(metadata.get("parent_start", metadata.get("start", fallback_chunk.get("start", 0)))),
+        parent_end=int(metadata.get("parent_end", metadata.get("end", fallback_chunk.get("end", 0)))),
+        child_index=int(metadata.get("child_index", 0)),
+        child_count=int(metadata.get("child_count", 1)),
     )
+
+
+def normalize_rerank_text(text: str, max_chars: int = 1800) -> str:
+    return " ".join(text.replace(PIC_TOKEN, " ").split())[:max_chars]
+
+
+def tokenize_for_bm25(text: str) -> list[str]:
+    return [
+        token.lower()
+        for token in BM25_TOKEN_PATTERN.findall(text.replace(PIC_TOKEN, " "))
+    ]
+
+
+def retrieval_key(result: RetrievalResult) -> tuple[int, int, int]:
+    chunk = result.chunk
+    return (chunk.entry_index, chunk.start, chunk.end)
+
+
+def merge_retrieval_results(
+    primary: list[RetrievalResult],
+    secondary: list[RetrievalResult],
+) -> list[RetrievalResult]:
+    merged: dict[tuple[int, int, int], RetrievalResult] = {}
+    for result in primary:
+        merged[retrieval_key(result)] = result
+    for result in secondary:
+        merged.setdefault(retrieval_key(result), result)
+    return list(merged.values())
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
@@ -796,8 +1225,6 @@ def safe_cache_name(value: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--download-model", action="store_true")
-    parser.add_argument("--model-name", default=DEFAULT_EMBEDDING_MODEL_NAME)
     parser.add_argument("--model-dir", type=Path, default=DEFAULT_EMBEDDING_MODEL_DIR)
     parser.add_argument("--image-dir", type=Path, default=IMAGE_DIR)
     parser.add_argument("--cache-dir", type=Path, default=RAG_CACHE_DIR)
@@ -805,8 +1232,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--product-name")
     parser.add_argument("--question")
     parser.add_argument("--top-k", type=int, default=5)
-    parser.add_argument("--neighbor-count", type=int, default=0)
-    parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--max-images-per-chunk", type=int, default=0)
     parser.add_argument("--device", default="cpu")
@@ -818,16 +1243,11 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    if args.download_model:
-        model_dir = download_embedding_model(args.model_name, args.model_dir)
-        print(f"downloaded to {model_dir}")
-        return
 
     rag = ManualRAG(
         embedding_model_dir=args.model_dir,
         image_dir=args.image_dir,
         cache_dir=args.cache_dir,
-        chunk_size=args.chunk_size,
         batch_size=args.batch_size,
         max_images_per_chunk=args.max_images_per_chunk,
         device=args.device,
@@ -860,7 +1280,7 @@ def main() -> None:
         return
 
     if not args.manual:
-        print("请提供 --manual，或使用 --download-model 下载模型。")
+        print("请提供 --manual，或使用 --warmup-all 预热全部手册。")
         return
 
     if args.dry_run:
@@ -883,7 +1303,6 @@ def main() -> None:
         args.manual,
         product_name=args.product_name,
         top_k=args.top_k,
-        neighbor_count=args.neighbor_count,
         rebuild_cache=args.rebuild_cache,
     )
     for index, result in enumerate(results, start=1):

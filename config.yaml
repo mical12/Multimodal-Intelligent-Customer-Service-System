@@ -16,13 +16,20 @@ agents:
       snippets_per_manual: 2
       global_top_k: 80
       snippet_max_chars: 420
+      max_images: 20
 
   expert:
     model: "qwen3.6-flash"
     prompt_template: "你是产品专家助手，负责结合产品手册回答安装、使用、故障排查等问题。"
     retrieval:
       top_k: 4
-      neighbor_count: 0
+      candidate_top_k: 10
+      bm25_top_k: 10
+      rerank:
+        enabled: true
+        model_dir: "Qwen3-Reranker-0.6B/models/Qwen3-Reranker-0.6B"
+        max_length: 1024
+        batch_size: 2
 
   customer:
     model: "qwen3.6-flash"

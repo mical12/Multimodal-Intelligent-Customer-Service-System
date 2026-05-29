@@ -216,6 +216,10 @@ def record_expert_response(
                 "entry_index": result.chunk.entry_index,
                 "start": result.chunk.start,
                 "end": result.chunk.end,
+                "parent_start": result.chunk.metadata.parent_start if result.chunk.metadata else result.chunk.start,
+                "parent_end": result.chunk.metadata.parent_end if result.chunk.metadata else result.chunk.end,
+                "child_index": result.chunk.metadata.child_index if result.chunk.metadata else 0,
+                "child_count": result.chunk.metadata.child_count if result.chunk.metadata else 1,
                 "image_names": result.chunk.image_names,
                 "text_preview": normalize_manual_chunk_text(result.chunk.text)[:300],
             }

@@ -7,10 +7,12 @@ from typing import Any, Dict, List
 from openai import AsyncOpenAI
 
 from rag import (
+    DEFAULT_RERANKER_BATCH_SIZE,
+    DEFAULT_RERANKER_MAX_LENGTH,
+    DEFAULT_RERANKER_MODEL_DIR,
     MANUAL_DIR as RAG_MANUAL_DIR,
     RetrievalResult,
     cosine_similarity,
-    expand_with_neighbor_chunks,
     get_default_rag,
     product_name_from_manual,
     warmup_targets,
@@ -22,6 +24,7 @@ from util import (
     ManualContent,
     ManualMatch,
     MAX_EXPERT_IMAGES,
+    annotate_pic_tokens,
     build_expert_prompt,
     build_image_label_map,
     build_extractive_expert_answer,
@@ -47,6 +50,7 @@ from util import (
 FIXED_TEST_REPLY = "您好，您的问题已收到，我们会尽快为您处理。"
 LLM_ROUTER_PRODUCTS = {""}
 MAX_EXPERT_MODEL_RETRIES = 3
+MAX_GLOBAL_RAG_IMAGES = 20
 GLOBAL_RAG_INDEXES: list[dict[str, Any]] | None = None
 LANGUAGE_SYSTEM_RULE = (
     "请始终根据用户最新问题的语言回答：中文问题必须用中文回答，"
@@ -130,6 +134,7 @@ class IntentAgent(BaseAgent):
         self.global_rag_snippets_per_manual = int(rag_settings.get("snippets_per_manual", 2))
         self.global_rag_top_k = int(rag_settings.get("global_top_k", 80))
         self.global_rag_max_chars = int(rag_settings.get("snippet_max_chars", 420))
+        self.global_rag_max_images = int(rag_settings.get("max_images", MAX_GLOBAL_RAG_IMAGES))
 
     async def recognize(self, history: List[ChatMessage]) -> IntentResult:
         question = latest_user_message(history)
@@ -182,7 +187,7 @@ class IntentAgent(BaseAgent):
         question_text = question.casefold()
         best_match: tuple[int, ManualMatch] | None = None
 
-        for manual_path in self._manual_files():
+        for manual_path in self._manual_files_for_question(question):
             product_name = self._product_name_from_manual(manual_path)
 
             if product_name in self.manual_sub_aliases:
@@ -333,7 +338,12 @@ class IntentAgent(BaseAgent):
                 snippets.append(
                     {
                         "score": result.score,
-                        "text": self._normalize_rag_text(result.chunk.text),
+                        "text": result.chunk.text,
+                        "image_names": [
+                            image_name
+                            for image_name in result.chunk.image_names
+                            if find_image_path(image_name) is not None
+                        ],
                     }
                 )
             candidates.append(
@@ -362,6 +372,8 @@ class IntentAgent(BaseAgent):
         by_label: dict[str, list[RetrievalResult]] = {}
 
         for index in self._global_rag_indexes():
+            if not self._index_matches_question_language(index, question):
+                continue
             best_by_chunk: dict[int, RetrievalResult] = {}
             for chunk_index, document_vector in zip(
                 index["document_chunk_indexes"],
@@ -403,8 +415,19 @@ class IntentAgent(BaseAgent):
         GLOBAL_RAG_INDEXES = indexes
         return indexes
 
-    def _normalize_rag_text(self, text: str) -> str:
-        return " ".join(text.replace("<PIC>", " ").split())[: self.global_rag_max_chars]
+    def _normalize_rag_text(
+        self,
+        text: str,
+        image_names: list[str] | None = None,
+        image_labels: dict[str, str] | None = None,
+    ) -> str:
+        image_names = image_names or []
+        image_labels = image_labels or {}
+        if image_names and image_labels:
+            text = annotate_pic_tokens(text, image_names, image_labels)
+        else:
+            text = text.replace("<PIC>", " ")
+        return " ".join(text.split())[: self.global_rag_max_chars]
 
     async def _classify_global_rag_candidates(
         self,
@@ -413,12 +436,22 @@ class IntentAgent(BaseAgent):
     ) -> dict[str, Any]:
         system_prompt = (
             "你是产品手册路由器。请根据用户问题和全局RAG候选片段判断是否应交给产品手册专家。"
+            "英文问题只能选择英文汇总手册中的英文产品；中文问题只能选择中文单产品手册。"
+            "候选片段中的 <PIC_数字: 图片名> 表示该位置有对应插图；如果图片已提供，请结合图片判断。"
             "只要候选片段能直接回答手册类问题，就选择对应产品手册；"
             "只有售后、物流、发票、退换货、投诉等非手册问题，或候选证据明显无关时，才返回customer。"
             "product_name必须精确使用候选手册名，不要附加分数或解释。只输出JSON。"
         )
+        image_names = self._global_rag_candidate_image_names(candidates)
+        image_labels = build_image_label_map(image_names)
         prompt_lines = [
             f"用户问题：{question}",
+            "",
+            "已提供图片：",
+            "\n".join(
+                f"<{image_labels[image_name]}: {image_name}>"
+                for image_name in image_names
+            ) if image_names else "无",
             "",
             "全局RAG候选手册与片段：",
         ]
@@ -428,8 +461,14 @@ class IntentAgent(BaseAgent):
                 f"(avg={candidate['avg_score']:.4f}, max={candidate['max_score']:.4f})"
             )
             for snippet_index, snippet in enumerate(candidate["snippets"], start=1):
+                snippet_image_names = [
+                    image_name
+                    for image_name in snippet.get("image_names", [])
+                    if image_name in image_labels
+                ]
                 prompt_lines.append(
-                    f"   片段{snippet_index} score={snippet['score']:.4f}: {snippet['text']}"
+                    f"   片段{snippet_index} score={snippet['score']:.4f}: "
+                    f"{self._normalize_rag_text(snippet['text'], snippet_image_names, image_labels)}"
                 )
         prompt_lines.extend(
             [
@@ -439,18 +478,91 @@ class IntentAgent(BaseAgent):
         )
 
         try:
+            user_content = self._global_rag_user_content("\n".join(prompt_lines), image_names)
             completion = await self._client().chat.completions.create(
                 model=self.model,
                 temperature=0,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": "\n".join(prompt_lines)},
+                    {"role": "user", "content": user_content},
                 ],
             )
-        except Exception:
-            return {}
+        except Exception as exc:
+            if not image_names or not self._is_data_inspection_error(exc):
+                return {}
+            prompt_lines.extend(
+                [
+                    "",
+                    "注意：图片因平台安全审核未能随消息发送，请仅根据文本和图片标签判断。",
+                ]
+            )
+            try:
+                completion = await self._client().chat.completions.create(
+                    model=self.model,
+                    temperature=0,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": "\n".join(prompt_lines)},
+                    ],
+                )
+            except Exception:
+                return {}
 
         return parse_json_object(completion.choices[0].message.content or "")
+
+    def _global_rag_candidate_image_names(self, candidates: list[dict[str, Any]]) -> list[str]:
+        if self.global_rag_max_images <= 0:
+            return []
+
+        image_names: list[str] = []
+        seen = set()
+        for candidate in candidates:
+            for snippet in candidate.get("snippets", []):
+                for image_name in snippet.get("image_names", []):
+                    if image_name in seen:
+                        continue
+                    if find_image_path(image_name) is None:
+                        continue
+                    seen.add(image_name)
+                    image_names.append(image_name)
+                    if len(image_names) >= self.global_rag_max_images:
+                        return image_names
+        return image_names
+
+    @staticmethod
+    def _global_rag_user_content(
+        prompt: str,
+        image_names: list[str],
+    ) -> str | list[dict[str, Any]]:
+        if not image_names:
+            return prompt
+
+        image_labels = build_image_label_map(image_names)
+        content: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+        for image_name in image_names:
+            image_path = find_image_path(image_name)
+            if image_path is None:
+                continue
+            content.append({"type": "text", "text": f"图片 <{image_labels[image_name]}: {image_name}>"})
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": image_path_to_data_url(image_path),
+                    },
+                }
+            )
+        return content
+
+    @staticmethod
+    def _is_data_inspection_error(exc: Exception) -> bool:
+        text = f"{type(exc).__name__}: {exc}".casefold()
+        return (
+            "datainspectionfailed" in text
+            or "data_inspection_failed" in text
+            or "input image data" in text
+            or "inappropriate content" in text
+        )
 
     @staticmethod
     def _normalize_candidate_product_name(product_name: str, labels: list[str]) -> str:
@@ -535,13 +647,14 @@ class IntentAgent(BaseAgent):
         rule_manual_match: ManualMatch | None = None,
     ) -> ManualMatch | None:
         rule_manual_path = rule_manual_match.manual_path if rule_manual_match else None
-        manual_options = self._manual_options_for_llm(rule_manual_path)
+        manual_options = self._manual_options_for_llm(question, rule_manual_path)
         if not manual_options:
             return None
 
         system_prompt = (
             "你是电商客服系统的产品手册路由器。"
             "请根据用户问题和每本手册摘要，判断问题是否应该交给某一本产品手册处理。"
+            "英文问题只能在英文汇总手册的英文产品中选择；中文问题只能在中文单产品手册中选择。"
             "如果问题属于英文汇总手册中的某个产品，manual_name 必须返回英文汇总，"
             "product_name 必须返回英文汇总手册中对应产品的准确名称。"
             "只输出 JSON，不要输出解释。"
@@ -619,8 +732,12 @@ class IntentAgent(BaseAgent):
             image_names=manual_content.image_names,
         )
 
-    def _manual_options_for_llm(self, rule_manual_path: Path | None = None) -> str:
-        manual_files = self._manual_files()
+    def _manual_options_for_llm(
+        self,
+        question: str,
+        rule_manual_path: Path | None = None,
+    ) -> str:
+        manual_files = self._manual_files_for_question(question)
         products = [self._product_name_from_manual(path) for path in manual_files]
 
         if rule_manual_path is not None:
@@ -639,6 +756,43 @@ class IntentAgent(BaseAgent):
                 lines.append(f"- {product_name}：{summary}")
 
         return "\n".join(lines)
+
+    def _manual_files_for_question(self, question: str) -> List[Path]:
+        language = self._question_language(question)
+        manual_files = self._manual_files()
+        if language == "en":
+            return [
+                path
+                for path in manual_files
+                if self._product_name_from_manual(path) == "英文汇总"
+            ]
+        if language == "zh":
+            return [
+                path
+                for path in manual_files
+                if self._product_name_from_manual(path) != "英文汇总"
+            ]
+        return manual_files
+
+    def _index_matches_question_language(self, index: dict[str, Any], question: str) -> bool:
+        language = self._question_language(question)
+        manual_name = self._product_name_from_manual(Path(index["manual_path"]))
+        if language == "en":
+            return manual_name == "英文汇总"
+        if language == "zh":
+            return manual_name != "英文汇总"
+        return True
+
+    @staticmethod
+    def _question_language(question: str) -> str:
+        text = str(question or "")
+        cjk_count = sum(1 for char in text if "\u4e00" <= char <= "\u9fff")
+        latin_count = sum(1 for char in text if char.isascii() and char.isalpha())
+        if cjk_count > 0:
+            return "zh"
+        if latin_count > 0:
+            return "en"
+        return "unknown"
 
     @staticmethod
     def _parse_llm_router_result(content: str) -> Dict[str, Any]:
@@ -673,7 +827,21 @@ class ExpertAgent(BaseAgent):
         agent_settings = load_config().get("agents", {}).get("expert", {})
         retrieval_settings = agent_settings.get("retrieval", {})
         self.retrieval_top_k = int(retrieval_settings.get("top_k", 6))
-        self.retrieval_neighbor_count = int(retrieval_settings.get("neighbor_count", 1))
+        self.retrieval_candidate_top_k = int(
+            retrieval_settings.get("candidate_top_k", self.retrieval_top_k)
+        )
+        self.retrieval_bm25_top_k = int(retrieval_settings.get("bm25_top_k", 0))
+        rerank_settings = retrieval_settings.get("rerank", {})
+        self.rerank_enabled = bool(rerank_settings.get("enabled", False))
+        self.reranker_model_dir = Path(
+            rerank_settings.get("model_dir") or DEFAULT_RERANKER_MODEL_DIR
+        )
+        self.reranker_max_length = int(
+            rerank_settings.get("max_length", DEFAULT_RERANKER_MAX_LENGTH)
+        )
+        self.reranker_batch_size = int(
+            rerank_settings.get("batch_size", DEFAULT_RERANKER_BATCH_SIZE)
+        )
 
     async def reply(self, history: List[ChatMessage], intent: IntentResult) -> str:
         if intent.manual_path is None:
@@ -750,36 +918,27 @@ class ExpertAgent(BaseAgent):
         question: str,
         intent: IntentResult,
         top_k: int | None = None,
-        neighbor_count: int | None = None,
     ) -> List[RetrievalResult]:
         top_k = self.retrieval_top_k if top_k is None else top_k
-        neighbor_count = self.retrieval_neighbor_count if neighbor_count is None else neighbor_count
 
-        if intent.routing_results:
-            top_results = sorted(
-                intent.routing_results,
-                key=lambda item: item.score,
-                reverse=True,
-            )[:top_k]
-            chunks = [
-                result.chunk
-                for result in sorted(
-                    intent.routing_results,
-                    key=lambda item: (
-                        item.chunk.entry_index,
-                        item.chunk.start,
-                        item.chunk.end,
-                    ),
-                )
-            ]
-            return expand_with_neighbor_chunks(top_results, chunks, neighbor_count)
+        if self.rerank_enabled:
+            return get_default_rag().retrieve_with_bm25_rerank(
+                question=question,
+                manual_path=intent.manual_path,
+                product_name=intent.product_name,
+                embedding_top_k=self.retrieval_candidate_top_k,
+                bm25_top_k=self.retrieval_bm25_top_k,
+                final_top_k=top_k,
+                reranker_model_dir=self.reranker_model_dir,
+                reranker_max_length=self.reranker_max_length,
+                reranker_batch_size=self.reranker_batch_size,
+            )
 
         return get_default_rag().retrieve(
             question=question,
             manual_path=intent.manual_path,
             product_name=intent.product_name,
             top_k=top_k,
-            neighbor_count=neighbor_count,
         )
 
     async def _call_expert_model_with_retry(
@@ -847,6 +1006,7 @@ class ExpertAgent(BaseAgent):
         return (
             "datainspectionfailed" in text
             or "data_inspection_failed" in text
+            or "input image data" in text
             or "inappropriate content" in text
         )
 
