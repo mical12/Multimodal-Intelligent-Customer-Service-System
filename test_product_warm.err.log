@@ -1,0 +1,102 @@
+
+# >>>>>>>>>>>>>>>>>>>>>> ERROR REPORT <<<<<<<<<<<<<<<<<<<<<<
+
+    Traceback (most recent call last):
+      File "D:\anaconda3\Lib\site-packages\conda\exception_handler.py", line 18, in __call__
+        return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+      File "D:\anaconda3\Lib\site-packages\conda\cli\main.py", line 61, in main_subshell
+        exit_code = do_call(args, parser)
+                    ^^^^^^^^^^^^^^^^^^^^^
+      File "D:\anaconda3\Lib\site-packages\conda\cli\conda_argparse.py", line 205, in do_call
+        result = getattr(module, func_name)(args, parser)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "D:\anaconda3\Lib\site-packages\conda\cli\main_run.py", line 118, in execute
+        print(response.stdout, file=sys.stdout)
+    UnicodeEncodeError: 'gbk' codec can't encode character '\ufffd' in position 181: illegal multibyte sequence
+
+`$ D:\anaconda3\Scripts\conda-script.py run -n work python test_recheck.py --all --concurrency 4 --output retest_product_warm_detail.csv --submission-output submission_mixed_current.csv --reuse-customer-from submission(1).csv --timeout 600`
+
+  environment variables:
+                 CIO_TEST=<not set>
+    CONDA_ALLOW_SOFTLINKS=false
+        CONDA_DEFAULT_ENV=base
+                CONDA_EXE=D:\anaconda3\Scripts\conda.exe
+               CONDA_EXES="D:\anaconda3\Scripts\conda.exe"
+             CONDA_PREFIX=D:\anaconda3
+    CONDA_PROMPT_MODIFIER=(base)
+         CONDA_PYTHON_EXE=D:\anaconda3\python.exe
+               CONDA_ROOT=D:\anaconda3
+              CONDA_SHLVL=1
+           CURL_CA_BUNDLE=<not set>
+                 HOMEPATH=\Users\10056
+               LD_PRELOAD=<not set>
+                     PATH=D:\anaconda3;D:\anaconda3\Library\mingw-
+                          w64\bin;D:\anaconda3\Library\usr\bin;D:\anaconda3\Library\bin;D:\anaco
+                          nda3\Scripts;D:\anaconda3\bin;D:\anaconda3\condabin;C:\Users\10056\.co
+                          dex\tmp\arg0\codex-arg0999x7n;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOW
+                          S\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0;C:\WINDOWS\
+                          System32\OpenSSH;C:\Program Files\Git\cmd;C:\Program Files\nodejs;D:\p
+                          csuite;C:\Users\10056\AppData\Local\Microsoft\WindowsApps;.;D:\PyCharm
+                          Community Edition 2024.3.1.1\bin;.;D:\Microsoft VS Code\bin;C:\Users\1
+                          0056\AppData\Roaming\npm;c:\Users\10056\.vscode\extensions\openai.chat
+                          gpt-26.601.21317-win32-x64\bin\windows-x86_64
+             PSMODULEPATH=C:\Users\10056\Documents\WindowsPowerShell\Modules;C:\Program Files\Wi
+                          ndowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Mod
+                          ules
+       REQUESTS_CA_BUNDLE=<not set>
+            SSL_CERT_FILE=D:\anaconda3\Library\ssl\cacert.pem
+   VSCODE_CODE_CACHE_PATH=C:\Users\10056\AppData\Roaming\Code\CachedData\8761a5560cfd65fdd19ce7e
+                          2bd18dab5c0a4d84e
+
+     active environment : base
+    active env location : D:\anaconda3
+            shell level : 1
+       user config file : C:\Users\10056\.condarc
+ populated config files : D:\anaconda3\.condarc
+                          C:\Users\10056\.condarc
+          conda version : 24.11.3
+    conda-build version : 24.9.0
+         python version : 3.12.7.final.0
+                 solver : libmamba (default)
+       virtual packages : __archspec=1=x86_64_v4
+                          __conda=24.11.3=0
+                          __win=0=0
+       base environment : D:\anaconda3  (writable)
+      conda av data dir : D:\anaconda3\etc\conda
+  conda av metadata url : None
+           channel URLs : https://repo.anaconda.com/pkgs/main/win-64
+                          https://repo.anaconda.com/pkgs/main/noarch
+                          https://repo.anaconda.com/pkgs/r/win-64
+                          https://repo.anaconda.com/pkgs/r/noarch
+                          https://repo.anaconda.com/pkgs/msys2/win-64
+                          https://repo.anaconda.com/pkgs/msys2/noarch
+          package cache : D:\anaconda3\pkgs
+                          C:\Users\10056\.conda\pkgs
+                          C:\Users\10056\AppData\Local\conda\conda\pkgs
+       envs directories : D:\anaconda3\envs
+                          C:\Users\10056\.conda\envs
+                          C:\Users\10056\AppData\Local\conda\conda\envs
+               platform : win-64
+             user-agent : conda/24.11.3 requests/2.32.3 CPython/3.12.7 Windows/11 Windows/10.0.26200 solver/libmamba conda-libmamba-solver/24.9.0 libmambapy/1.5.8
+          administrator : False
+             netrc file : None
+           offline mode : False
+
+
+An unexpected error has occurred. Conda has prepared the above report.
+If you suspect this error is being caused by a malfunctioning plugin,
+consider using the --no-plugins option to turn off plugins.
+
+Example: conda --no-plugins install <package>
+
+Alternatively, you can set the CONDA_NO_PLUGINS environment variable on
+the command line to run the command without plugins enabled.
+
+Example: CONDA_NO_PLUGINS=true conda install <package>
+
+
+No report sent. To permanently opt-out, use
+
+    $ conda config --set report_errors false
+

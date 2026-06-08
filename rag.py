@@ -12,12 +12,14 @@ from typing import Any
 BASE_DIR = Path(__file__).resolve().parent
 MANUAL_DIR = BASE_DIR / "手册"
 IMAGE_DIR = MANUAL_DIR / "插图"
-RAG_CACHE_DIR = MANUAL_DIR / "rag_cache"
+RAG_CACHE_DIR = MANUAL_DIR / "rag_cache_section"
 MANUAL_ALIAS_PATH = BASE_DIR / "manual_aliases.yaml"
 
 DEFAULT_EMBEDDING_MODEL_DIR = BASE_DIR / "Qwen3-VL-Embedding-2B"
 DEFAULT_RERANKER_MODEL_DIR = BASE_DIR / "Qwen3-Reranker-0.6B" / "models" / "Qwen3-Reranker-0.6B"
-DEFAULT_CHUNK_SIZE = 512
+DEFAULT_CHUNK_SIZE = 256
+DEFAULT_CHUNKING_MODE = "section"
+CHUNKING_MODES = {"section", "section_split"}
 DEFAULT_BATCH_SIZE = 4
 DEFAULT_RERANKER_BATCH_SIZE = 2
 DEFAULT_RERANKER_MAX_LENGTH = 1024
@@ -31,7 +33,7 @@ ENGLISH_SUMMARY_PRODUCT = "英文汇总"
 MANUAL_SUFFIX = "手册"
 PIC_TOKEN = "<PIC>"
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
-CACHE_VERSION = 3
+CACHE_VERSION = 4
 HEADING_PATTERN = re.compile(r"(?<!\S)#\s+")
 TOC_DOT_LEADER_PATTERN = re.compile(r"\.{6,}")
 SENTENCE_END_PATTERN = re.compile(r"[。！？!?]|(?<!\d)\.(?!\d)")
@@ -170,6 +172,7 @@ class ManualRAG:
         image_dir: Path = IMAGE_DIR,
         cache_dir: Path = RAG_CACHE_DIR,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunking_mode: str = DEFAULT_CHUNKING_MODE,
         batch_size: int = DEFAULT_BATCH_SIZE,
         max_images_per_chunk: int = 0,
         query_prompt: str = DEFAULT_QUERY_PROMPT,
@@ -178,16 +181,21 @@ class ManualRAG:
         if max_images_per_chunk < 0:
             raise ValueError("max_images_per_chunk 不能小于 0。")
 
+        if chunking_mode not in CHUNKING_MODES:
+            raise ValueError(f"unsupported chunking_mode: {chunking_mode}")
+
         self.embedding_model_dir = embedding_model_dir
         self.image_dir = image_dir
         self.cache_dir = cache_dir
         self.chunk_size = chunk_size
+        self.chunking_mode = chunking_mode
         self.batch_size = batch_size
         self.max_images_per_chunk = max_images_per_chunk
         self.query_prompt = query_prompt
         self.device = device
         self._embedder: Any | None = None
         self._reranker: QwenReranker | None = None
+        self._bm25_cache: dict[tuple[Any, ...], dict[str, Any]] = {}
 
     def retrieve(
         self,
@@ -220,9 +228,7 @@ class ManualRAG:
                 best_by_chunk[chunk_index] = RetrievalResult(chunk=chunk, score=score)
 
         results = sorted(best_by_chunk.values(), key=lambda item: item.score, reverse=True)[:top_k]
-        if neighbor_count > 0:
-            return expand_with_adjacent_child_chunks(results, chunks, neighbor_count)
-        return results
+        return maybe_expand_results(results, chunks, neighbor_count)
 
     def retrieve_with_bm25_rerank(
         self,
@@ -269,11 +275,11 @@ class ManualRAG:
             RetrievalResult(chunk=result.chunk, score=float(score))
             for result, score in reranked[:final_top_k]
         ]
+        chunks: list[ManualChunk] = []
         if neighbor_count > 0:
             index = self.load_or_build_index(manual_path=manual_path, product_name=product_name)
-            chunks: list[ManualChunk] = index["chunks"]
-            return expand_with_adjacent_child_chunks(results, chunks, neighbor_count)
-        return results
+            chunks = index["chunks"]
+        return maybe_expand_results(results, chunks, neighbor_count)
 
     def retrieve_bm25(
         self,
@@ -289,18 +295,15 @@ class ManualRAG:
         if not chunks:
             return []
 
-        tokenized_chunks = [tokenize_for_bm25(chunk.text) for chunk in chunks]
+        bm25_index = self._get_bm25_index(index)
+        tokenized_chunks: list[list[str]] = bm25_index["tokenized_chunks"]
         query_tokens = tokenize_for_bm25(question)
         if not query_tokens:
             return []
 
-        doc_freq: dict[str, int] = {}
-        for tokens in tokenized_chunks:
-            for token in set(tokens):
-                doc_freq[token] = doc_freq.get(token, 0) + 1
-
-        avgdl = sum(len(tokens) for tokens in tokenized_chunks) / max(len(tokenized_chunks), 1)
-        total_docs = len(tokenized_chunks)
+        doc_freq: dict[str, int] = bm25_index["doc_freq"]
+        avgdl: float = bm25_index["avgdl"]
+        total_docs: int = bm25_index["total_docs"]
         query_unique = set(query_tokens)
         k1 = 1.5
         b = 0.75
@@ -326,6 +329,37 @@ class ManualRAG:
 
         return sorted(results, key=lambda item: item.score, reverse=True)[:top_k]
 
+    def _get_bm25_index(self, index: dict[str, Any]) -> dict[str, Any]:
+        metadata = index.get("metadata", {})
+        cache_key = (
+            metadata.get("manual_path"),
+            metadata.get("manual_mtime_ns"),
+            metadata.get("manual_size"),
+            metadata.get("product_name"),
+            metadata.get("chunk_size"),
+            metadata.get("chunking_mode"),
+            len(index.get("chunks", [])),
+        )
+        cached = self._bm25_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        chunks: list[ManualChunk] = index["chunks"]
+        tokenized_chunks = [tokenize_for_bm25(chunk.text) for chunk in chunks]
+        doc_freq: dict[str, int] = {}
+        for tokens in tokenized_chunks:
+            for token in set(tokens):
+                doc_freq[token] = doc_freq.get(token, 0) + 1
+
+        payload = {
+            "tokenized_chunks": tokenized_chunks,
+            "doc_freq": doc_freq,
+            "avgdl": sum(len(tokens) for tokens in tokenized_chunks) / max(len(tokenized_chunks), 1),
+            "total_docs": len(tokenized_chunks),
+        }
+        self._bm25_cache[cache_key] = payload
+        return payload
+
     def load_or_build_index(
         self,
         manual_path: Path,
@@ -340,6 +374,7 @@ class ManualRAG:
             entry_indexes=entry_indexes,
             image_dir=self.image_dir,
             chunk_size=self.chunk_size,
+            chunking_mode=self.chunking_mode,
         )
         metadata = self._cache_metadata(manual_path, product_name, entry_indexes, chunks)
         cache_path = self._cache_path(manual_path, product_name)
@@ -375,6 +410,7 @@ class ManualRAG:
             entry_indexes=selected_entry_indexes(manual_path, product_name, len(entries)),
             image_dir=self.image_dir,
             chunk_size=self.chunk_size,
+            chunking_mode=self.chunking_mode,
         )
 
     def warmup_all(
@@ -388,29 +424,20 @@ class ManualRAG:
         product_name before RAG retrieval.
         """
         warmed = []
-        for manual_path in manual_files(manual_dir):
-            manual_product_name = product_name_from_manual(manual_path)
-            product_names: list[str | None]
-            if manual_product_name == ENGLISH_SUMMARY_PRODUCT:
-                product_names = english_summary_product_names()
-            else:
-                product_names = [None]
-
-            for product_name in product_names:
-                index = self.load_or_build_index(
-                    manual_path=manual_path,
-                    product_name=product_name,
-                    rebuild_cache=rebuild_cache,
-                )
-                warmed.append(
-                    {
-                        "manual_path": manual_path,
-                        "product_name": product_name,
-                        "chunk_count": len(index["chunks"]),
-                        "document_count": len(index["document_vectors"]),
-                    }
-                )
-
+        for manual_path, product_name in warmup_targets(manual_dir):
+            index = self.load_or_build_index(
+                manual_path=manual_path,
+                product_name=product_name,
+                rebuild_cache=rebuild_cache,
+            )
+            warmed.append(
+                {
+                    "manual_path": manual_path,
+                    "product_name": product_name,
+                    "chunk_count": len(index["chunks"]),
+                    "document_count": len(index["document_vectors"]),
+                }
+            )
         return warmed
 
     def _documents_from_chunk(self, chunk: ManualChunk) -> list[str | dict[str, str]]:
@@ -490,6 +517,7 @@ class ManualRAG:
                 str(manual_path.resolve()),
                 product_part,
                 str(self.chunk_size),
+                self.chunking_mode,
                 str(self.max_images_per_chunk),
                 str(self.embedding_model_dir.resolve()),
             ]
@@ -515,6 +543,7 @@ class ManualRAG:
             "product_name": product_name,
             "entry_indexes": entry_indexes,
             "chunk_size": self.chunk_size,
+            "chunking_mode": self.chunking_mode,
             "max_images_per_chunk": self.max_images_per_chunk,
             "embedding_model_dir": str(self.embedding_model_dir.resolve()),
             "image_fingerprints": image_fingerprints(chunks),
@@ -649,6 +678,7 @@ def split_manual_entries(
     entry_indexes: list[int] | None = None,
     image_dir: Path = IMAGE_DIR,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
+    chunking_mode: str = DEFAULT_CHUNKING_MODE,
 ) -> list[ManualChunk]:
     chunks: list[ManualChunk] = []
     selected_indexes = entry_indexes if entry_indexes is not None else list(range(len(entries)))
@@ -666,7 +696,7 @@ def split_manual_entries(
             for match in re.finditer(re.escape(PIC_TOKEN), content)
         ]
 
-        for span in section_chunk_spans(content, target_chars=chunk_size):
+        for span in section_chunk_spans(content, target_chars=chunk_size, chunking_mode=chunking_mode):
             start, end, strategy, parent_start, parent_end, child_index, child_count = span
             chunks.append(
                 build_manual_chunk(
@@ -760,12 +790,21 @@ def make_chunk_span(
     )
 
 
-def section_chunk_spans(content: str, target_chars: int = DEFAULT_CHUNK_SIZE) -> list[ChunkSpan]:
+def section_chunk_spans(
+    content: str,
+    target_chars: int = DEFAULT_CHUNK_SIZE,
+    chunking_mode: str = DEFAULT_CHUNKING_MODE,
+) -> list[ChunkSpan]:
+    if chunking_mode not in CHUNKING_MODES:
+        raise ValueError(f"unsupported chunking_mode: {chunking_mode}")
+
     raw_spans = raw_section_spans(content)
     raw_spans = merge_tiny_section_spans(raw_spans, content, min_chars=MIN_STANDALONE_SECTION_CHARS)
     raw_spans = drop_table_of_contents_spans(raw_spans, content)
     raw_spans = merge_tiny_section_spans(raw_spans, content, min_chars=MIN_STANDALONE_SECTION_CHARS)
     clustered_spans = cluster_section_spans(raw_spans, target_chars=target_chars)
+    if chunking_mode == "section":
+        return clustered_spans
     return split_long_spans_by_sentence(clustered_spans, content, target_chars=target_chars)
 
 
@@ -1172,7 +1211,10 @@ def tokenize_for_bm25(text: str) -> list[str]:
 
 
 def retrieval_key(result: RetrievalResult) -> tuple[int, int, int]:
-    chunk = result.chunk
+    return chunk_key(result.chunk)
+
+
+def chunk_key(chunk: ManualChunk) -> tuple[int, int, int]:
     return (chunk.entry_index, chunk.start, chunk.end)
 
 
@@ -1186,6 +1228,16 @@ def merge_retrieval_results(
     for result in secondary:
         merged.setdefault(retrieval_key(result), result)
     return list(merged.values())
+
+
+def maybe_expand_results(
+    results: list[RetrievalResult],
+    chunks: list[ManualChunk],
+    neighbor_count: int,
+) -> list[RetrievalResult]:
+    if neighbor_count <= 0:
+        return results
+    return expand_with_adjacent_child_chunks(results, chunks, neighbor_count)
 
 
 def expand_with_adjacent_child_chunks(
@@ -1246,6 +1298,220 @@ def expand_with_adjacent_child_chunks(
     return expanded
 
 
+def prepare_expert_context_results(
+    results: list[RetrievalResult],
+    chunks: list[ManualChunk],
+    max_results: int = 4,
+    max_section_chars: int = 2400,
+) -> list[RetrievalResult]:
+    if not results:
+        return []
+
+    chunks_by_parent: dict[tuple[int, int, int], list[ManualChunk]] = {}
+    for chunk in chunks:
+        parent_key = parent_chunk_key(chunk)
+        chunks_by_parent.setdefault(parent_key, []).append(chunk)
+    for group in chunks_by_parent.values():
+        group.sort(key=lambda item: (item.metadata.child_index if item.metadata else 0, item.start, item.end))
+
+    prepared: list[RetrievalResult] = []
+    seen_parents: set[tuple[int, int, int]] = set()
+    for result in sorted(results, key=lambda item: item.score, reverse=True):
+        if is_context_toc_like(result.chunk.text):
+            continue
+        parent_key = parent_chunk_key(result.chunk)
+        if parent_key in seen_parents:
+            continue
+        seen_parents.add(parent_key)
+
+        parent_group = [
+            chunk
+            for chunk in chunks_by_parent.get(parent_key, [result.chunk])
+            if not is_context_toc_like(chunk.text)
+        ]
+        if not parent_group:
+            continue
+        parent_group = select_parent_context_chunks(
+            parent_group,
+            anchor_chunk=result.chunk,
+            max_chars=max_section_chars,
+        )
+        prepared.append(
+            RetrievalResult(
+                chunk=aggregate_parent_chunks(parent_group, fallback=result.chunk),
+                score=result.score,
+            )
+        )
+        if len(prepared) >= max_results:
+            break
+
+    if prepared:
+        return trim_oversized_context_results(prepared, max_section_chars=max_section_chars)
+    return results[:max_results]
+
+
+def parent_chunk_key(chunk: ManualChunk) -> tuple[int, int, int]:
+    metadata = chunk.metadata
+    if metadata is None:
+        return (chunk.entry_index, chunk.start, chunk.end)
+    parent_start = metadata.parent_start if metadata.parent_start is not None else chunk.start
+    parent_end = metadata.parent_end if metadata.parent_end is not None else chunk.end
+    return (chunk.entry_index, parent_start, parent_end)
+
+
+def is_context_toc_like(text: str) -> bool:
+    text = str(text or "")
+    normalized = " ".join(text.casefold().split())
+    dot_leader_count = len(TOC_DOT_LEADER_PATTERN.findall(text))
+    has_toc_marker = (
+        "contents" in normalized
+        or "table of contents" in normalized
+        or "目录" in normalized
+        or "鐩綍" in normalized
+    )
+    if dot_leader_count >= 15:
+        return True
+    if not has_toc_marker and dot_leader_count < 8:
+        return False
+    digit_line_count = len(re.findall(r"(?:^|\s)\d{1,3}(?:\s|$)", text))
+    return has_toc_marker and (dot_leader_count >= 4 or digit_line_count >= 8)
+
+
+def aggregate_parent_chunks(chunks: list[ManualChunk], fallback: ManualChunk) -> ManualChunk:
+    chunks = sorted(chunks, key=lambda item: (item.start, item.end))
+    text = "\n".join(chunk.text.strip() for chunk in chunks if chunk.text.strip())
+    image_names: list[str] = []
+    image_paths: list[Path] = []
+    seen_images: set[str] = set()
+    for chunk in chunks:
+        image_path_by_name = {
+            image_path.stem: image_path
+            for image_path in chunk.image_paths
+        }
+        for image_name in chunk.image_names:
+            if image_name in seen_images:
+                continue
+            seen_images.add(image_name)
+            image_names.append(image_name)
+            image_path = image_path_by_name.get(image_name)
+            if image_path is not None:
+                image_paths.append(image_path)
+
+    first = chunks[0]
+    last = chunks[-1]
+    fallback_metadata = fallback.metadata
+    metadata = ChunkMetaData(
+        entry_index=first.entry_index,
+        start=first.start,
+        end=last.end,
+        char_count=len(text),
+        image_count=len(image_names),
+        chunking_strategy="expert_parent_aggregate",
+        heading=(fallback_metadata.heading if fallback_metadata else "") or extract_chunk_heading(text),
+        parent_start=first.start,
+        parent_end=last.end,
+        child_index=0,
+        child_count=1,
+    )
+    return ManualChunk(
+        text=text,
+        entry_index=first.entry_index,
+        start=first.start,
+        end=last.end,
+        image_names=image_names,
+        image_paths=image_paths,
+        metadata=metadata,
+    )
+
+
+def select_parent_context_chunks(
+    chunks: list[ManualChunk],
+    anchor_chunk: ManualChunk,
+    max_chars: int,
+) -> list[ManualChunk]:
+    chunks = sorted(chunks, key=lambda item: (item.start, item.end))
+    if sum(len(chunk.text) for chunk in chunks) <= max_chars:
+        return chunks
+
+    anchor_index = 0
+    for index, chunk in enumerate(chunks):
+        if chunk.start == anchor_chunk.start and chunk.end == anchor_chunk.end:
+            anchor_index = index
+            break
+
+    selected_indexes = {anchor_index}
+    total_chars = len(chunks[anchor_index].text)
+    left = anchor_index - 1
+    right = anchor_index + 1
+    while left >= 0 or right < len(chunks):
+        candidates: list[tuple[int, int]] = []
+        if left >= 0:
+            candidates.append((abs(anchor_index - left), left))
+        if right < len(chunks):
+            candidates.append((abs(anchor_index - right), right))
+        candidates.sort()
+
+        added = False
+        for _, candidate_index in candidates:
+            candidate_len = len(chunks[candidate_index].text)
+            if total_chars + candidate_len > max_chars and selected_indexes:
+                continue
+            selected_indexes.add(candidate_index)
+            total_chars += candidate_len
+            added = True
+            if candidate_index == left:
+                left -= 1
+            if candidate_index == right:
+                right += 1
+            break
+        if not added:
+            break
+
+    return [chunks[index] for index in sorted(selected_indexes)]
+
+
+def trim_oversized_context_results(
+    results: list[RetrievalResult],
+    max_section_chars: int,
+) -> list[RetrievalResult]:
+    trimmed: list[RetrievalResult] = []
+    for result in results:
+        if len(result.chunk.text) <= max_section_chars:
+            trimmed.append(result)
+            continue
+        chunk = result.chunk
+        metadata = chunk.metadata
+        trimmed_text = chunk.text[:max_section_chars].rstrip()
+        trimmed_metadata = ChunkMetaData(
+            entry_index=chunk.entry_index,
+            start=chunk.start,
+            end=chunk.start + len(trimmed_text),
+            char_count=len(trimmed_text),
+            image_count=len(chunk.image_names),
+            chunking_strategy="expert_parent_aggregate_trimmed",
+            heading=metadata.heading if metadata else "",
+            parent_start=metadata.parent_start if metadata else chunk.start,
+            parent_end=metadata.parent_end if metadata else chunk.end,
+            child_index=0,
+            child_count=1,
+        )
+        trimmed.append(
+            RetrievalResult(
+                chunk=ManualChunk(
+                    text=trimmed_text,
+                    entry_index=chunk.entry_index,
+                    start=chunk.start,
+                    end=chunk.start + len(trimmed_text),
+                    image_names=chunk.image_names,
+                    image_paths=chunk.image_paths,
+                    metadata=trimmed_metadata,
+                ),
+                score=result.score,
+            )
+        )
+    return trimmed
+
+
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     if not left or not right:
         return 0.0
@@ -1300,6 +1566,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--product-name")
     parser.add_argument("--question")
     parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
+    parser.add_argument("--chunking-mode", choices=sorted(CHUNKING_MODES), default=DEFAULT_CHUNKING_MODE)
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--max-images-per-chunk", type=int, default=0)
     parser.add_argument("--device", default="cpu")
@@ -1316,27 +1584,17 @@ def main() -> None:
         embedding_model_dir=args.model_dir,
         image_dir=args.image_dir,
         cache_dir=args.cache_dir,
+        chunk_size=args.chunk_size,
+        chunking_mode=args.chunking_mode,
         batch_size=args.batch_size,
         max_images_per_chunk=args.max_images_per_chunk,
         device=args.device,
     )
 
     if args.warmup_all:
-        warmed = []
-        for manual_path, product_name in warmup_targets(MANUAL_DIR):
-            index = rag.load_or_build_index(
-                manual_path=manual_path,
-                product_name=product_name,
-                rebuild_cache=args.rebuild_cache,
-            )
-            item = {
-                "manual_path": manual_path,
-                "product_name": product_name,
-                "chunk_count": len(index["chunks"]),
-                "document_count": len(index["document_vectors"]),
-            }
-            warmed.append(item)
-            display_product_name = product_name or "all"
+        warmed = rag.warmup_all(rebuild_cache=args.rebuild_cache)
+        for item in warmed:
+            display_product_name = item["product_name"] or "all"
             print(
                 f"cached manual={item['manual_path'].name} "
                 f"product={display_product_name} "

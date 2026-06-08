@@ -7,10 +7,11 @@ from pathlib import Path
 import httpx
 
 
-DEFAULT_IDS = ["67", "90", "98", "105", "109", "114", "131", "132", "228", "293"]
+DEFAULT_IDS = ["9", "90", "98", "105", "109", "114", "131", "132", "228", "293"]
 QUESTION_PATH = Path("question_public.csv")
 OUTPUT_PATH = Path("retest_result.csv")
 API_URL = "http://127.0.0.1:8000/chat"
+CUSTOMER_MAX_ID = 58
 
 
 def load_questions(path: Path, ids: list[str]) -> list[dict[str, str]]:
@@ -23,6 +24,27 @@ def load_questions(path: Path, ids: list[str]) -> list[dict[str, str]]:
         ]
     rows.sort(key=lambda row: ids.index(row["id"]))
     return rows
+
+
+def load_all_questions(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8-sig", newline="") as file:
+        return list(csv.DictReader(file))
+
+
+def load_submission_answers(path: Path) -> dict[str, str]:
+    with path.open("r", encoding="utf-8-sig", newline="") as file:
+        return {
+            row["id"]: row.get("ret", "")
+            for row in csv.DictReader(file)
+            if row.get("id")
+        }
+
+
+def is_customer_question(row: dict[str, str]) -> bool:
+    try:
+        return int(row["id"]) <= CUSTOMER_MAX_ID
+    except (TypeError, ValueError):
+        return False
 
 
 def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
@@ -44,6 +66,13 @@ def write_rows(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
+def write_submission_rows(path: Path, rows: list[dict[str, str]]) -> None:
+    with path.open("w", encoding="utf-8-sig", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["id", "ret"])
+        writer.writeheader()
+        writer.writerows({"id": row["id"], "ret": row["ret"]} for row in rows)
+
+
 def append_row(path: Path, row: dict[str, str]) -> None:
     fieldnames = [
         "id",
@@ -63,6 +92,15 @@ def append_row(path: Path, row: dict[str, str]) -> None:
         if not exists:
             writer.writeheader()
         writer.writerow(row)
+
+
+def append_submission_row(path: Path, row: dict[str, str]) -> None:
+    exists = path.exists()
+    with path.open("a", encoding="utf-8-sig", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["id", "ret"])
+        if not exists:
+            writer.writeheader()
+        writer.writerow({"id": row["id"], "ret": row["ret"]})
 
 
 async def run_direct(
@@ -119,8 +157,19 @@ async def run_http(
     api_url: str,
     timeout_seconds: float,
     output_path: Path | None = None,
+    concurrency: int = 1,
+    reuse_customer_from: Path | None = None,
+    submission_output_path: Path | None = None,
 ) -> list[dict[str, str]]:
     results = []
+    results_by_id: dict[str, dict[str, str]] = {}
+    submission_answers = (
+        load_submission_answers(reuse_customer_from)
+        if reuse_customer_from is not None
+        else {}
+    )
+    write_lock = asyncio.Lock()
+    semaphore = asyncio.Semaphore(max(1, concurrency))
     timeout = httpx.Timeout(timeout_seconds, connect=10.0)
     async with httpx.AsyncClient(timeout=timeout, trust_env=False) as client:
         try:
@@ -129,52 +178,84 @@ async def run_http(
         except Exception as exc:
             print(f"server probe failed: {type(exc).__name__}: {exc}")
 
-        for row in questions:
+        async def run_one(row: dict[str, str]) -> dict[str, str]:
             question_id = row["id"]
             question = row["question"]
-            started = time.perf_counter()
-            try:
-                response = await client.post(
-                    api_url,
-                    json={
-                        "user_id": f"retest_{question_id}",
-                        "message": question,
-                    },
-                )
-                response.raise_for_status()
-                reply = response.json()["reply"]
-                elapsed = time.perf_counter() - started
+            if is_customer_question(row) and question_id in submission_answers:
                 result = {
                     "id": question_id,
                     "question": question,
-                    "mode": "http",
+                    "mode": "reuse_customer",
                     "status": "ok",
-                    "elapsed": f"{elapsed:.2f}",
-                    "agent_type": "",
+                    "elapsed": "0.00",
+                    "agent_type": "customer",
                     "product_name": "",
                     "manual_name": "",
-                    "ret": reply,
+                    "ret": submission_answers[question_id],
                     "error": "",
                 }
-            except Exception as exc:
-                elapsed = time.perf_counter() - started
-                result = {
-                    "id": question_id,
-                    "question": question,
-                    "mode": "http",
-                    "status": "error",
-                    "elapsed": f"{elapsed:.2f}",
-                    "agent_type": "",
-                    "product_name": "",
-                    "manual_name": "",
-                    "ret": "",
-                    "error": f"{type(exc).__name__}: {exc}",
-                }
+                print_result(result)
+                async with write_lock:
+                    if output_path is not None:
+                        append_row(output_path, result)
+                    if submission_output_path is not None:
+                        append_submission_row(submission_output_path, result)
+                return result
+
+            started = time.perf_counter()
+            async with semaphore:
+                try:
+                    response = await client.post(
+                        api_url,
+                        json={
+                            "user_id": f"retest_{question_id}",
+                            "message": question,
+                        },
+                    )
+                    response.raise_for_status()
+                    reply = response.json()["reply"]
+                    elapsed = time.perf_counter() - started
+                    result = {
+                        "id": question_id,
+                        "question": question,
+                        "mode": "http",
+                        "status": "ok",
+                        "elapsed": f"{elapsed:.2f}",
+                        "agent_type": "expert",
+                        "product_name": "",
+                        "manual_name": "",
+                        "ret": reply,
+                        "error": "",
+                    }
+                except Exception as exc:
+                    elapsed = time.perf_counter() - started
+                    result = {
+                        "id": question_id,
+                        "question": question,
+                        "mode": "http",
+                        "status": "error",
+                        "elapsed": f"{elapsed:.2f}",
+                        "agent_type": "expert",
+                        "product_name": "",
+                        "manual_name": "",
+                        "ret": "",
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
             print_result(result)
+            async with write_lock:
+                if output_path is not None:
+                    append_row(output_path, result)
+                if submission_output_path is not None:
+                    append_submission_row(submission_output_path, result)
+            return result
+
+        tasks = [asyncio.create_task(run_one(row)) for row in questions]
+        for task in asyncio.as_completed(tasks):
+            result = await task
             results.append(result)
-            if output_path is not None:
-                append_row(output_path, result)
-    return results
+            results_by_id[result["id"]] = result
+
+    return [results_by_id[row["id"]] for row in questions if row["id"] in results_by_id]
 
 
 def print_result(row: dict[str, str]) -> None:
@@ -197,8 +278,12 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["direct", "http"], default="http")
     parser.add_argument("--ids", nargs="+", default=DEFAULT_IDS)
+    parser.add_argument("--all", action="store_true")
     parser.add_argument("--questions", type=Path, default=QUESTION_PATH)
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument("--submission-output", type=Path)
+    parser.add_argument("--reuse-customer-from", type=Path, default=Path("submission(1).csv"))
+    parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--api-url", default=API_URL)
     parser.add_argument("--timeout", type=float, default=300.0)
     return parser.parse_args()
@@ -220,5 +305,36 @@ async def main():
     print(f"saved to {args.output}")
 
 
+async def main_recheck():
+    args = parse_args()
+    questions = load_all_questions(args.questions) if args.all else load_questions(args.questions, args.ids)
+    if not questions:
+        raise RuntimeError("no questions found")
+
+    if args.output.exists():
+        args.output.unlink()
+    if args.submission_output and args.submission_output.exists():
+        args.submission_output.unlink()
+
+    if args.mode == "direct":
+        rows = await run_direct(questions, args.output)
+    else:
+        rows = await run_http(
+            questions,
+            args.api_url,
+            args.timeout,
+            args.output,
+            concurrency=args.concurrency,
+            reuse_customer_from=args.reuse_customer_from,
+            submission_output_path=args.submission_output,
+        )
+
+    if args.submission_output is not None:
+        write_submission_rows(args.submission_output, rows)
+    print(f"saved to {args.output}")
+    if args.submission_output is not None:
+        print(f"saved submission to {args.submission_output}")
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main_recheck())

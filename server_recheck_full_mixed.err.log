@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "D:\Git_leader\Multimodal-Intelligent-Customer-Service-System\app.py", line 5, in <module>
+    from fastapi import FastAPI
+ModuleNotFoundError: No module named 'fastapi'

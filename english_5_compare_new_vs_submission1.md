@@ -1,0 +1,79 @@
+# English 5-sample comparison
+
+## ID 268
+
+**Question**
+
+"How should I do if I want to empty the system before not in use, for frost protection or before maintenance?"
+
+**submission(1).csv**
+
+"Note: the machine will be blocked for 10 minutes after emptying mode. Steps: 1) Press both Espresso and Lungo buttons to turn the machine off. <PIC> 2) Remove the water tank and open the lever. <PIC> 3) Press both Espresso and Lungo buttons for 3 seconds. <PIC> Both LEDs blink alternatively. <PIC> 4) Close the lever. <PIC> 5) The machine switches off automatically. 6) Empty and clean the used capsule container and drip tray.", ["Manual07_28", "Manual07_29", "Manual07_30", "Manual07_31", "Manual07_32"]
+
+**submission_mixed_current.csv**
+
+"To empty the system before a period of non-use, for frost protection, or before a repair, follow these steps:\n1. Press both the Espresso and Lungo buttons to turn the machine off <PIC>.\n2. Remove the water tank and open the lever <PIC>.\n3. Press both the Espresso and Lungo buttons for 3 seconds <PIC>. Both LEDs will blink alternatively <PIC>.\n4. Close the lever <PIC>.\n5. The machine will switch off automatically.\n6. Empty and clean the used capsule container and drip tray.\nNote: The machine will be blocked for 10 minutes after emptying mode.", ["Manual07_28", "Manual07_29", "Manual07_30", "Manual07_31", "Manual07_32"]
+
+## ID 276
+
+**Question**
+
+"When I am ready to sail, if everything is ready, how do I make the boat move forward?"
+
+**submission(1).csv**
+
+"Move the remote control levers to the forward position. Initially, this engages the TDE position for low-speed handling <PIC>. Move the levers farther forward and the shift gates lift fully, directing all jet thrust to the rear, which moves the boat forward <PIC>.", ["Manual09_48", "Manual09_50"]
+
+**submission_mixed_current.csv**
+
+"When the remote control levers are moved farther forward, the shift gates are lifted all the way up <PIC>. All jet thrust is to the rear, which moves the boat forward.", ["Manual09_50"]
+
+## ID 311
+
+**Question**
+
+"When connecting the fax, hwo can I properly finish the procedure?"
+
+**submission(1).csv**
+
+"To properly finish connecting the fax: use only a No. 26 AWG or larger telecommunication line cord. Before installation or modification, disconnect all cables from the wall outlet. Connect the product only to an AC power source within the rating label range, and plug the grounded plug into a grounded AC outlet. Do not connect it to a DC power source or inverter, and do not use it on coin service lines or party lines.", []
+
+**submission_mixed_current.csv**
+
+"Put the product near a telephone wall jack and a standard AC power outlet. To program this information into your machine, see the Online User's Guide: Set the Date and Time and Set Your Station ID.", []
+
+## ID 393
+
+**Question**
+
+"How can you set silicone cap and float valve for a multi-use pressure cooker and air fryer?"
+
+**submission(1).csv**
+
+"To install them: drop the narrow end of the float valve into the float valve hole on the top of the lid. Place one finger on the flat top of the float valve, turn the lid over, then firmly attach the silicone cap to the bottom of the float valve. Do not operate the pressure cooker unless both the float valve and silicone cap are properly installed. <PIC>", ["Manual30_37"]
+
+**submission_mixed_current.csv**
+
+"To install the float valve and silicone cap:\n1. Drop the narrow end of the float valve into the float valve hole on the top of the lid <PIC>.\n2. Place one finger on the flat top of the float valve, then turn the lid over.\n3. Firmly attach the silicone cap to the bottom of the float valve <PIC>.\nDo not attempt to operate the pressure cooker without them properly installed.", ["Manual30_18", "Manual30_37"]
+
+## ID 433
+
+**Question**
+
+"What safety precautions should be followed to ensure safe operation during this process?"
+
+**submission(1).csv**
+
+"To ensure safe operation: disconnect power before installation or maintenance; have installation/maintenance done by qualified personnel; ensure the appliance is earthed; do not use adapters or extension cords; do not operate with wet body parts or barefoot; keep children away; avoid touching heating elements or internal surfaces until cooled; open the door carefully to release hot air/steam; use oven gloves; keep flammable items away; do not heat sealed containers or use synthetic containers; monitor foods with oil/fat, alcohol, or during drying; do not block ventilation openings.", []
+
+**submission_mixed_current.csv**
+
+Hello! To provide you with the most accurate safety instructions, could you please specify which product or process you are referring to?
+
+Since our previous context did not mention a specific item, general advice for safe operation usually includes:
+1.  **Read the Manual:** Always follow the manufacturer's guidelines.
+2.  **Power Safety:** Ensure devices are unplugged before maintenance or cleaning.
+3.  **Environment:** Keep electronics away from water and extreme temperatures.
+4.  **Personal Protection:** Use appropriate gear (e.g., gloves, glasses) if handling sharp or hazardous materials.
+
+Please let me know the product name or order number so I can give you precise details!

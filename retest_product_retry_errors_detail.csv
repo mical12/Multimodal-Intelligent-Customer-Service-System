@@ -1,0 +1,5 @@
+﻿id,question,mode,status,elapsed,agent_type,product_name,manual_name,ret,error
+99,"""如何根据洗碗机型号安装餐具篮？""",http,ok,348.94,expert,,,"""餐具篮（视型号而定）设计用于更干净地清洗叉、勺等餐具。<PIC> 安装时，请将餐具篮配件按图示放入餐具篮中。<PIC>"", [""Manual06_11"", ""Manual06_12""]",
+202,"""如何设置功能键盘？""",http,error,1548.95,expert,,,,ReadTimeout: 
+203,"""如何拆卸和重新安装功能键盘的轴体？""",http,error,2748.97,expert,,,,ReadTimeout: 
+205,"""如何在硬件模式下使用功能键盘？""",http,ok,3741.97,expert,,,"""配置文件1至4自带四种默认灯光模式，按下FN键+F1、F2、F3或F4即可切换调用。若已设置自定义灯光并分配至某板载配置文件，切换至该自定义配置文件时将激活自定义灯光。"", []",

@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 
 from openai import AsyncOpenAI
 
+from agentic_rag import AgenticRAGConfig, run_agentic_rag
 from rag import (
     DEFAULT_RERANKER_BATCH_SIZE,
     DEFAULT_RERANKER_MAX_LENGTH,
@@ -14,6 +15,7 @@ from rag import (
     RetrievalResult,
     cosine_similarity,
     get_default_rag,
+    prepare_expert_context_results,
     product_name_from_manual,
     warmup_targets,
 )
@@ -103,6 +105,12 @@ class BaseAgent:
 
         return messages
 
+    def _chat_completion_options(self, enable_thinking: bool | None = None) -> dict[str, Any]:
+        model_name = str(self.model or "").lower()
+        if "qwen3" in model_name:
+            return {"extra_body": {"enable_thinking": bool(enable_thinking)}}
+        return {}
+
     async def _chat_with_history(
         self,
         history: List[ChatMessage],
@@ -112,6 +120,7 @@ class BaseAgent:
         completion = await self._client().chat.completions.create(
             model=self.model,
             messages=self._history_messages(history, system_prompt, extra_user_context),
+            **self._chat_completion_options(),
         )
         return completion.choices[0].message.content or ""
 
@@ -281,14 +290,17 @@ class IntentAgent(BaseAgent):
             return None
 
         result = await self._classify_global_rag_candidates(question, candidates)
-        if result.get("agent_type") != "expert":
-            return None
 
-        labels = [candidate["label"] for candidate in candidates]
+        labels = self._global_rag_allowed_product_names(question, candidates)
         product_name = self._normalize_candidate_product_name(
             str(result.get("product_name") or ""),
             labels,
         )
+        agent_type = str(result.get("agent_type") or "").strip().lower()
+        if not product_name and agent_type != "expert":
+            return None
+        if product_name and agent_type == "customer":
+            return None
         if not product_name:
             return None
 
@@ -436,14 +448,20 @@ class IntentAgent(BaseAgent):
     ) -> dict[str, Any]:
         system_prompt = (
             "你是产品手册路由器。请根据用户问题和全局RAG候选片段判断是否应交给产品手册专家。"
-            "英文问题只能选择英文汇总手册中的英文产品；中文问题只能选择中文单产品手册。"
             "候选片段中的 <PIC_数字: 图片名> 表示该位置有对应插图；如果图片已提供，请结合图片判断。"
-            "只要候选片段能直接回答手册类问题，就选择对应产品手册；"
-            "只有售后、物流、发票、退换货、投诉等非手册问题，或候选证据明显无关时，才返回customer。"
-            "product_name必须精确使用候选手册名，不要附加分数或解释。只输出JSON。"
+            "请同时参考手册摘要；即使RAG片段没有直接命中，只要用户问的是某个具体产品手册中的安装、使用、"
+            "设置、维护、故障排查、安全注意事项等问题，也应选择对应产品手册。"
+            "只有售后、物流、发票、退换货、投诉等非手册问题，或候选片段和手册摘要都明显无关时，才返回customer。"
+            "agent_type只能是expert或customer二选一；只要product_name不是null，agent_type必须为expert。"
+            "product_name必须精确使用候选手册名或摘要中的产品名，不要附加分数或解释。只输出JSON。"
         )
-        image_names = self._global_rag_candidate_image_names(candidates)
+        image_names = (
+            self._global_rag_candidate_image_names(candidates)
+            if self._model_supports_image_input()
+            else []
+        )
         image_labels = build_image_label_map(image_names)
+        summary_options = self._global_rag_summary_options(question)
         prompt_lines = [
             f"用户问题：{question}",
             "",
@@ -452,6 +470,9 @@ class IntentAgent(BaseAgent):
                 f"<{image_labels[image_name]}: {image_name}>"
                 for image_name in image_names
             ) if image_names else "无",
+            "",
+            "同语言手册摘要：",
+            summary_options or "无",
             "",
             "全局RAG候选手册与片段：",
         ]
@@ -486,6 +507,7 @@ class IntentAgent(BaseAgent):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content},
                 ],
+                **self._chat_completion_options(),
             )
         except Exception as exc:
             if not image_names or not self._is_data_inspection_error(exc):
@@ -504,6 +526,7 @@ class IntentAgent(BaseAgent):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": "\n".join(prompt_lines)},
                     ],
+                    **self._chat_completion_options(),
                 )
             except Exception:
                 return {}
@@ -554,6 +577,53 @@ class IntentAgent(BaseAgent):
             )
         return content
 
+    def _global_rag_summary_options(self, question: str) -> str:
+        language = self._question_language(question)
+        if language == "en":
+            lines = []
+            summary = self.manual_summaries.get("英文汇总")
+            if summary:
+                lines.append(f"- 英文汇总：{summary}")
+            sub_products = list(self.manual_sub_aliases.get("英文汇总", {}).keys())
+            if sub_products:
+                lines.append("英文汇总中的可选英文产品：" + "、".join(sub_products))
+            return "\n".join(lines)
+
+        lines = []
+        for manual_path in self._manual_files_for_question(question):
+            product_name = self._product_name_from_manual(manual_path)
+            summary = self.manual_summaries.get(product_name)
+            if summary:
+                lines.append(f"- {product_name}：{summary}")
+        return "\n".join(lines)
+
+    def _global_rag_allowed_product_names(
+        self,
+        question: str,
+        candidates: list[dict[str, Any]],
+    ) -> list[str]:
+        names = [candidate["label"] for candidate in candidates]
+        if self._question_language(question) == "en":
+            names.extend(self.manual_sub_aliases.get("英文汇总", {}).keys())
+            names.append("英文汇总")
+        else:
+            names.extend(
+                self._product_name_from_manual(path)
+                for path in self._manual_files_for_question(question)
+            )
+
+        unique_names = []
+        seen = set()
+        for name in names:
+            if name and name not in seen:
+                seen.add(name)
+                unique_names.append(name)
+        return unique_names
+
+    def _model_supports_image_input(self) -> bool:
+        model_name = str(self.model or "").lower()
+        return "vl" in model_name or "vision" in model_name
+
     @staticmethod
     def _is_data_inspection_error(exc: Exception) -> bool:
         text = f"{type(exc).__name__}: {exc}".casefold()
@@ -561,6 +631,11 @@ class IntentAgent(BaseAgent):
             "datainspectionfailed" in text
             or "data_inspection_failed" in text
             or "input image data" in text
+            or "unknown variant `image_url`" in text
+            or "unknown variant 'image_url'" in text
+            or "expected `text`" in text
+            or "expected 'text'" in text
+            or "unexpected item type in content" in text
             or "inappropriate content" in text
         )
 
@@ -676,6 +751,7 @@ class IntentAgent(BaseAgent):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
+                **self._chat_completion_options(),
             )
             content = completion.choices[0].message.content or ""
             result = self._parse_llm_router_result(content)
@@ -786,13 +862,13 @@ class IntentAgent(BaseAgent):
     @staticmethod
     def _question_language(question: str) -> str:
         text = str(question or "")
-        cjk_count = sum(1 for char in text if "\u4e00" <= char <= "\u9fff")
-        latin_count = sum(1 for char in text if char.isascii() and char.isalpha())
-        if cjk_count > 0:
+        has_cjk = any("\u4e00" <= char <= "\u9fff" for char in text)
+        has_latin = any(char.isascii() and char.isalpha() for char in text)
+        if has_cjk:
             return "zh"
-        if latin_count > 0:
+        if has_latin:
             return "en"
-        return "unknown"
+        return "zh"
 
     @staticmethod
     def _parse_llm_router_result(content: str) -> Dict[str, Any]:
@@ -824,7 +900,10 @@ class ExpertAgent(BaseAgent):
 
     def __init__(self, agent_config: AgentConfig):
         super().__init__(agent_config)
-        agent_settings = load_config().get("agents", {}).get("expert", {})
+        config = load_config()
+        agent_settings = config.get("agents", {}).get("expert", {})
+        self.agentic_rag_config = AgenticRAGConfig.from_config(config, "expert")
+        self.final_enable_thinking = bool(agent_settings.get("enable_thinking", False))
         retrieval_settings = agent_settings.get("retrieval", {})
         self.retrieval_top_k = int(retrieval_settings.get("top_k", 6))
         self.retrieval_neighbor_count = int(retrieval_settings.get("neighbor_count", 0))
@@ -857,12 +936,27 @@ class ExpertAgent(BaseAgent):
         if not results:
             return await self._fallback_expert_reply(history, intent)
 
+        evidence_summary = ""
+        if self.agentic_rag_config.enabled:
+            agentic_result = await run_agentic_rag(
+                agent=self,
+                question=question,
+                intent=intent,
+                initial_results=results,
+                top_k=self.retrieval_top_k,
+                config=self.agentic_rag_config,
+            )
+            if agentic_result.results:
+                results = agentic_result.results
+            evidence_summary = agentic_result.evidence_summary
+
         image_names = unique_image_names(results)
         raw_content, candidate_image_names, error_text = await self._call_expert_model_with_retry(
             history=history,
             intent=intent,
             results=results,
             image_names=image_names,
+            evidence_summary=evidence_summary,
         )
         if not raw_content.strip():
             if error_text:
@@ -923,7 +1017,7 @@ class ExpertAgent(BaseAgent):
         top_k = self.retrieval_top_k if top_k is None else top_k
 
         if self.rerank_enabled:
-            return get_default_rag().retrieve_with_bm25_rerank(
+            results = get_default_rag().retrieve_with_bm25_rerank(
                 question=question,
                 manual_path=intent.manual_path,
                 product_name=intent.product_name,
@@ -935,13 +1029,31 @@ class ExpertAgent(BaseAgent):
                 reranker_max_length=self.reranker_max_length,
                 reranker_batch_size=self.reranker_batch_size,
             )
+            index = get_default_rag().load_or_build_index(
+                manual_path=intent.manual_path,
+                product_name=intent.product_name,
+            )
+            return prepare_expert_context_results(
+                results,
+                index.get("chunks", []),
+                max_results=top_k,
+            )
 
-        return get_default_rag().retrieve(
+        results = get_default_rag().retrieve(
             question=question,
             manual_path=intent.manual_path,
             product_name=intent.product_name,
             top_k=top_k,
             neighbor_count=self.retrieval_neighbor_count,
+        )
+        index = get_default_rag().load_or_build_index(
+            manual_path=intent.manual_path,
+            product_name=intent.product_name,
+        )
+        return prepare_expert_context_results(
+            results,
+            index.get("chunks", []),
+            max_results=top_k,
         )
 
     async def _call_expert_model_with_retry(
@@ -951,6 +1063,7 @@ class ExpertAgent(BaseAgent):
         intent: IntentResult,
         results: List[RetrievalResult],
         image_names: List[str],
+        evidence_summary: str = "",
     ) -> tuple[str, List[str], str]:
         candidate_image_names = image_names
         last_error = ""
@@ -963,11 +1076,15 @@ class ExpertAgent(BaseAgent):
                 intent,
                 results,
                 candidate_image_names,
+                evidence_summary=evidence_summary,
             )
             try:
                 completion = await self._client().chat.completions.create(
                     model=self.model,
                     messages=messages,
+                    **self._chat_completion_options(
+                        enable_thinking=self.final_enable_thinking,
+                    ),
                 )
                 raw_content = completion.choices[0].message.content or ""
                 if raw_content.strip():
@@ -1010,6 +1127,10 @@ class ExpertAgent(BaseAgent):
             "datainspectionfailed" in text
             or "data_inspection_failed" in text
             or "input image data" in text
+            or "unknown variant `image_url`" in text
+            or "unknown variant 'image_url'" in text
+            or "expected `text`" in text
+            or "expected 'text'" in text
             or "inappropriate content" in text
         )
 
@@ -1030,12 +1151,34 @@ class ExpertAgent(BaseAgent):
         intent: IntentResult,
         results: List[RetrievalResult],
         image_names: List[str],
+        evidence_summary: str = "",
     ) -> List[Dict[str, Any]]:
         system_prompt = self.prompt_template or (
             "你是产品手册专家助手，必须只根据给定手册片段回答。"
         )
         system_prompt = f"{system_prompt}\n{LANGUAGE_SYSTEM_RULE}"
         text_prompt = build_expert_prompt(history, intent, results, image_names)
+        if evidence_summary.strip():
+            text_prompt += (
+                "\n\nAgentic RAG has already summarized the useful evidence below. "
+                "Use it to avoid missing key information, but still verify against the original chunks. "
+                "Write the final answer in a natural, polite customer-service style. "
+                "Do not copy the manual verbatim; explain the procedure or conclusion fluently. "
+                "When an image is helpful, insert <PIC> at the relevant sentence and include the matching image name in JSON.\n"
+                f"{evidence_summary.strip()}"
+            )
+        if not image_names:
+            messages: List[Dict[str, Any]] = [
+                {"role": "system", "content": system_prompt},
+            ]
+            for message in history[:-1]:
+                role = message.get("role", "")
+                previous_content = message.get("content", "")
+                if role in {"user", "assistant"} and previous_content:
+                    messages.append({"role": role, "content": previous_content})
+            messages.append({"role": "user", "content": text_prompt})
+            return messages
+
         content: List[Dict[str, Any]] = [
             {"type": "text", "text": text_prompt},
         ]

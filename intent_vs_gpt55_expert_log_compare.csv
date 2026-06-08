@@ -1,0 +1,350 @@
+﻿id,lang,question,gpt55_product,gpt55_manual,current_agent_type,current_product,current_manual,same_agent,same_product,same_manual,match,current_reason,gpt55_time,current_time
+64,zh,使用吹风机时，人员需要佩戴哪些防护装备？,吹风机,吹风机手册,expert,吹风机,吹风机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:13:44,2026-06-04T21:45:35
+65,zh,操作吹风机时，人员需要注意哪些安全要点？,吹风机,吹风机手册,expert,吹风机,吹风机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:14:07,2026-06-04T21:45:35
+66,zh,使用吹风机时，如何调节化油器？,吹风机,吹风机手册,expert,吹风机,吹风机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:14:07,2026-06-04T21:45:35
+67,zh,吹风机冷机时，该如何启动？,吹风机,吹风机手册,expert,吹风机,吹风机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:14:11,2026-06-04T21:45:35
+68,zh,吹风机热机时，该如何启动？,吹风机,吹风机手册,expert,吹风机,吹风机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:22,2026-06-04T21:48:01
+69,zh,该如何关闭吹风机？,吹风机,吹风机手册,expert,吹风机,吹风机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:09,2026-06-04T21:50:39
+70,zh,空调的重要组成部件有哪些？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:11,2026-06-04T21:50:48
+71,zh,如何找到空调遥控器的按键？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:37,2026-06-04T21:50:48
+72,zh,如何给空调遥控器安装电池？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:41,2026-06-04T21:51:48
+73,zh,如何安装空调遥控器支架？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:34,2026-06-04T21:52:43
+74,zh,如何用空调快速调节室内温度？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:52,2026-06-04T21:53:03
+75,zh,如何使用空调的自清洁运行功能？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:54,2026-06-04T21:53:09
+76,zh,如何使用空调的等离子净化功能？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:15:54,2026-06-04T21:54:10
+77,zh,单冷型空调如何开启自动运行模式？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:10,2026-06-04T21:54:42
+78,zh,如何使用空调的自动转换运行功能？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:07,2026-06-04T21:55:14
+79,zh,如何开启空调的节能制冷模式？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:05,2026-06-04T21:55:17
+80,zh,无遥控器时如何操作空调？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:27,2026-06-04T21:55:35
+81,zh,如何让空调实现自动重启？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:24,2026-06-04T21:56:17
+82,zh,不同型号空调的清洁频率是多少？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:27,2026-06-04T21:56:35
+83,zh,如何清洁空调的空气滤网？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:41,2026-06-04T21:56:39
+84,zh,如何清洁空调的3M多重防护滤网？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:47,2026-06-04T21:57:27
+85,zh,如何清洁空调的等离子滤网？,空调,空调手册,expert,空调,空调手册,True,True,True,True,规则命中产品手册,2026-05-25T17:16:45,2026-06-04T21:57:32
+86,zh,如何快速组装蒸汽清洁机？,蒸汽清洁机,蒸汽清洁机手册,expert,蒸汽清洁机,蒸汽清洁机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:36:29,2026-06-04T21:57:49
+87,zh,蒸汽清洁机有哪些实用的产品功能？如何快速上手使用？,蒸汽清洁机,蒸汽清洁机手册,expert,蒸汽清洁机,蒸汽清洁机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:36:53,2026-06-04T21:58:11
+88,zh,如何使用蒸汽清洁机清洁硬质地面？,蒸汽清洁机,蒸汽清洁机手册,expert,蒸汽清洁机,蒸汽清洁机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:37:11,2026-06-04T21:58:33
+89,zh,组装人体工学椅涉及哪些部件？,人体工学椅,人体工学椅手册,expert,人体工学椅,人体工学椅手册,True,True,True,True,规则命中产品手册,2026-05-25T17:37:26,2026-06-04T21:58:36
+90,zh,椅子的扶手使用一段时间后为什么会松动？,人体工学椅,人体工学椅手册,expert,人体工学椅,人体工学椅手册,True,True,True,True,规则命中产品手册,2026-05-25T17:37:39,2026-06-04T21:59:15
+91,zh,这款椅子有哪些功能？,人体工学椅,人体工学椅手册,expert,人体工学椅,人体工学椅手册,True,True,True,True,规则命中产品手册,2026-05-25T17:37:55,2026-06-04T21:59:39
+92,zh,洗碗机的部件有哪些？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:38:05,2026-06-04T22:01:47
+93,zh,首次使用时，如何将洗碗机连接到排水口？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:38:14,2026-06-04T22:03:08
+94,zh,使用前如何为洗碗机添加专用盐？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:38:32,2026-06-04T22:03:36
+95,zh,如何为洗碗机添加洗涤剂？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:38:50,2026-06-04T22:04:05
+96,zh,如何为洗碗机添加洗涤块？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:39:09,2026-06-04T22:04:55
+97,zh,如何在洗碗机中添加和使用亮碟剂以获得更好的洗涤效果？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:39:24,2026-06-04T22:05:07
+98,zh,哪些物品不适合在洗碗机中清洗？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:39:39,2026-06-04T22:05:29
+99,zh,如何根据洗碗机型号安装餐具篮？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:39:58,2026-06-05T00:20:06
+100,zh,使用洗碗机前如何安装可折叠下层篮架？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:40:22,2026-06-04T22:06:15
+101,zh,如何调节洗碗机满载时上下碗篮的高度？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:40:42,2026-06-04T22:06:23
+102,zh,如何清洁洗碗机的进水管滤网？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:40:54,2026-06-04T22:08:26
+103,zh,如何清洁洗碗机的上层喷淋臂？,洗碗机,洗碗机手册,expert,洗碗机,洗碗机手册,True,True,True,True,规则命中产品手册,2026-05-25T17:41:16,2026-06-04T22:09:24
+104,zh,如何拆除空气净化器滤网的塑料包装？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:41:31,2026-06-04T22:10:31
+105,zh,如何安装空气净化器的脚轮？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:41:45,2026-06-04T22:11:16
+106,zh,空气净化器通常有哪些模式？如何设置？这些模式有什么特点？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:42:16,2026-06-04T22:11:29
+107,zh,空气净化器的室内空气质量指示灯是什么？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:42:35,2026-06-04T22:12:45
+108,zh,如何清洁空气净化器的设备内外？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:42:48,2026-06-04T22:13:37
+109,zh,如何清洁空气净化器的滤网？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:43:05,2026-06-04T22:16:11
+110,zh,如何更换空气净化器的滤网？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:43:26,2026-06-04T22:16:15
+111,zh,如何清洁空气净化器的灰尘传感器？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:43:44,2026-06-04T22:16:43
+112,zh,空气净化器需要长期存放时该怎么做？,空气净化器,空气净化器手册,expert,空气净化器,空气净化器手册,True,True,True,True,规则命中产品手册,2026-05-25T17:43:52,2026-06-04T22:16:46
+113,zh,如何了解这款健身单车的技术规格？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:44:13,2026-06-04T22:19:03
+114,zh,启动健身单车前，我需要做什么？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:44:33,2026-06-04T22:19:13
+115,zh,我听说买的这款健身单车配有控制台和显示功能，能为我介绍一下吗？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:45:00,2026-06-04T22:19:17
+116,zh,在健身单车上运动前，我需要调整什么来保证运动的舒适度？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:45:20,2026-06-04T22:19:23
+117,zh,使用健身单车的轻松骑行类别时，我能体验到哪些预设运动程序？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:45:38,2026-06-04T22:21:03
+118,zh,使用健身单车的山地类别时，我能体验到哪些预设运动程序？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:45:56,2026-06-04T22:21:50
+119,zh,挑战健身单车的最高难度类别时，我能体验到哪些预设运动程序？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:46:16,2026-06-04T22:22:43
+120,zh,如果我想编辑健身单车的用户档案，需要遵循哪些步骤？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:46:37,2026-06-04T22:23:08
+121,zh,我想在使用健身单车时设置心率目标，能否根据我的年龄为我推荐合适的目标心率？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:46:59,2026-06-04T22:23:18
+122,zh,我听说这款健身单车有体能测试程序，这是什么功能？,健身单车,健身单车手册,expert,健身单车,健身单车手册,True,True,True,True,规则命中产品手册,2026-05-25T17:47:15,2026-06-04T22:23:57
+123,zh,如果要给电钻充电，需要遵循哪些步骤？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:06:15,2026-06-04T22:24:08
+124,zh,我的DCB101型号电钻指示灯闪烁时，这些闪烁标识代表什么含义？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:06:29,2026-06-04T22:24:17
+126,zh,使用电钻时，如何安装单套无键夹头？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:06:45,2026-06-04T22:25:00
+127,zh,如果要安装和拆卸电钻的电池组，需要遵循什么步骤？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:06:56,2026-06-04T22:25:04
+128,zh,使用电钻的腰带挂钩和批头夹时，需要特别注意什么？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:07:14,2026-06-04T22:25:13
+129,zh,购买电钻后，应配备哪些附件？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:07:30,2026-06-04T22:25:49
+130,zh,电钻的三年有限保修包含哪些内容？,电钻,电钻手册,expert,电钻,电钻手册,True,True,True,True,规则命中产品手册,2026-05-25T18:07:45,2026-06-04T22:26:17
+131,zh,购买健身追踪器后，包装盒里应该有什么？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:07:54,2026-06-04T22:26:49
+132,zh,我刚发现健身追踪器电量低，该如何正确为其充电？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:08:09,2026-06-04T22:26:54
+133,zh,为了让健身追踪器性能更佳，日常佩戴和运动时该将其佩戴在什么位置？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:08:23,2026-06-04T22:27:12
+134,zh,我的健身追踪器表带太紧了，该如何扣紧表带？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:08:38,2026-06-04T22:28:20
+135,zh,我想取下健身追踪器，该如何正确拆卸表带？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:08:50,2026-06-04T22:29:08
+136,zh,我听说可以操作健身追踪器的界面，具体该遵循哪些步骤？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:09:05,2026-06-04T22:29:31
+137,zh,健身追踪器能对手机的通知实现哪些功能？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:09:19,2026-06-04T22:30:05
+138,zh,能告诉我健身追踪器是如何追踪皮肤温度变化的吗？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:09:30,2026-06-04T22:30:07
+139,zh,通过运动应用，健身追踪器是如何追踪并分析我的运动情况的？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:09:48,2026-06-04T22:30:10
+140,zh,健身追踪器是如何测量我的心率的？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:09:58,2026-06-04T22:30:20
+141,zh,我该如何仅使用健身追踪器完成消费支付？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:10:15,2026-06-04T22:31:10
+142,zh,使用健身追踪器时，我可能会遇到哪些问题以及该如何解决？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:10:34,2026-06-04T22:31:13
+144,zh,我想给健身追踪器设置锁屏，该如何实现？,健身追踪器,健身追踪器手册,expert,健身追踪器,健身追踪器手册,True,True,True,True,规则命中产品手册,2026-05-25T18:10:44,2026-06-04T22:31:52
+145,zh,使用冰箱冰柜时需要注意什么？只需告诉我手册中的前五条。,冰箱,冰箱手册,expert,冰箱,冰箱手册,True,True,True,True,规则命中产品手册,2026-05-25T18:17:52,2026-06-04T22:32:20
+146,zh,给冰箱连接电源时，需要做到哪些注意事项？只需告诉我手册中的前五条。,冰箱,冰箱手册,expert,冰箱,冰箱手册,True,True,True,True,规则命中产品手册,2026-05-25T18:18:10,2026-06-04T22:32:25
+153,zh,考虑到燃油高度易燃且有毒，使用发电机时我需要注意什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:30:26,2026-06-04T22:33:38
+154,zh,发电机工作后，发动机和消音器可能会发烫，这种情况下我该如何保证自身安全？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:30:45,2026-06-04T22:33:39
+155,zh,日常使用中，如何防止发电机触电事故的发生？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:31:03,2026-06-04T22:33:57
+156,zh,需要通过发电机的燃油开关旋钮供油时，我该遵循哪些步骤？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:31:23,2026-06-04T22:34:40
+157,zh,使用发电机时，燃油的使用前检查十分重要，该如何操作？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:31:43,2026-06-04T22:35:43
+158,zh,启动发电机发动机的前两个步骤是什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:31:56,2026-06-04T22:36:08
+159,zh,我需要给发电机连接交流电，该过程中如何保证自身安全？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:32:15,2026-06-04T22:36:11
+160,zh,我注意到发电机上有两种不同的开关，请为我介绍一下。,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:32:33,2026-06-04T22:38:22
+161,zh,我该在哪里查找并记录发电机的标识信息？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:32:43,2026-06-04T22:38:30
+162,zh,使用发电机的直流保护器时，我需要注意什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:32:59,2026-06-04T22:38:53
+163,zh,使用发电机前，对发动机机油进行使用前检查十分重要，正确的步骤是什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:33:18,2026-06-04T22:39:00
+164,zh,根据手册说明，启动发电机发动机的最后三个步骤是什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:33:35,2026-06-04T22:40:03
+165,zh,发电机的电池电量不足了，该如何正确充电？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:33:52,2026-06-04T22:40:14
+166,zh,我需要让发电机的发动机停机，告诉我该如何操作。,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:34:08,2026-06-04T22:40:16
+167,zh,根据手册的建议，使用发电机时该如何检查火花塞？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:34:27,2026-06-04T22:41:51
+168,zh,为了正确更换发电机的发动机机油，我需要遵循的前六个步骤是什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:34:47,2026-06-04T22:41:54
+169,zh,我在操作发电机空气滤清器时出现了失误，请告诉我正确的步骤。,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:35:04,2026-06-04T22:41:59
+170,zh,如果发电机的发动机无法启动，我该怎么办？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:45:27,2026-06-04T22:43:30
+171,zh,我需要将发电机的燃油排空，该如何正确操作？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:45:50,2026-06-04T22:43:53
+172,zh,使用该发电机为对电压敏感的精密设备供电前，我需要做什么？,发电机,发电机手册,expert,发电机,发电机手册,True,True,True,True,规则命中产品手册,2026-05-25T18:46:01,2026-06-04T22:44:23
+173,zh,在划船或钓鱼的场景中，拖曳速度、半滑航速度和滑航速度分别指什么，它们在技巧和应用上有何不同？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:53:31,2026-06-04T22:44:29
+174,zh,如何在深水中登上并平衡摩托艇，确保操作的安全性和稳定性？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:53:42,2026-06-04T22:45:34
+175,zh,在滑航速度下驾驶摩托艇转弯时，有哪些技巧能在急转弯时保证稳定性和操控性？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:54:00,2026-06-04T22:45:38
+176,zh,驾驶摩托艇时，有哪些技巧能在完成大椭圆转弯、绕圈和8字行驶动作的同时，保持操控性和稳定性？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:54:21,2026-06-04T22:46:22
+177,zh,在驾驶摩托艇进行中低速转弯时，如何控制油门并保持行驶的稳定性和操控性？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:54:39,2026-06-04T22:46:23
+178,zh,如何驾驶摩托艇以拖曳速度直行和转弯，保证操作的平顺性和操控性？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:54:55,2026-06-04T22:46:25
+179,zh,摩托艇全加速行驶时，如何安全平稳地将其停稳？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:55:08,2026-06-04T22:47:16
+180,zh,驾驶摩托艇时，如何避免发生碰撞事故，保障自身和水上其他人员的安全？,摩托艇,摩托艇手册,expert,摩托艇,摩托艇手册,True,True,True,True,规则命中产品手册,2026-05-25T18:55:25,2026-06-04T22:47:41
+181,zh,水泵发动机安全停机的正确步骤是什么？,水泵,水泵手册,expert,水泵,水泵手册,True,True,True,True,规则命中产品手册,2026-05-25T19:00:57,2026-06-04T22:48:00
+182,zh,水泵的核心部件有哪些？,水泵,水泵手册,expert,水泵,水泵手册,True,True,True,True,规则命中产品手册,2026-05-25T19:01:14,2026-06-04T22:48:01
+183,zh,清洗油箱滤网的详细步骤是什么？,水泵,水泵手册,expert,水泵,水泵手册,True,True,True,True,规则命中产品手册,2026-05-25T19:01:30,2026-06-04T22:48:19
+184,zh,水泵安全排放燃油的正确步骤是什么？,水泵,水泵手册,expert,水泵,水泵手册,True,True,True,True,规则命中产品手册,2026-05-25T19:01:46,2026-06-04T22:48:24
+185,zh,水泵无法抽水的潜在原因有哪些，该如何有效诊断并解决这些问题？,水泵,水泵手册,expert,水泵,水泵手册,True,True,True,True,规则命中产品手册,2026-05-25T19:02:13,2026-06-04T22:49:31
+186,zh,如何为温控器设置日期和时间，以实现精准的日程和温度控制？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:07:51,2026-06-04T22:49:35
+187,zh,如何调整温控器的系统和风扇运行设置，以优化供暖和制冷效果？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:08:11,2026-06-04T22:49:46
+188,zh,如何调整温控器的程序日程，以实现高效的能源利用和温度控制？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:08:31,2026-06-04T22:50:02
+189,zh,如何在不影响已编程日程的情况下，临时更改温控器的温度设置？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:08:43,2026-06-04T22:50:32
+190,zh,当设备或系统出现警报界面时，应采取哪些操作？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:09:07,2026-06-04T22:50:49
+191,zh,针对热泵应如何修改接线，以确保连接正确且功能正常？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:09:28,2026-06-04T22:50:56
+192,zh,如何安全更换温控器的电池，确保更换后设备功能正常？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:09:50,2026-06-04T22:51:08
+193,zh,当标签与端子不匹配时，应如何正确为温控器重新接线，确保连接无误？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:10:11,2026-06-04T22:51:18
+194,zh,遇到温控器故障时，可采用哪些故障排除解决方案？,可编程温控器,可编程温控器手册,expert,可编程温控器,可编程温控器手册,True,True,True,True,规则命中产品手册,2026-05-25T19:10:31,2026-06-04T22:51:55
+195,zh,设备或系统中构成处理器单元的关键组件或部件有哪些？,VR头显,VR头显手册,expert,VR头显,VR头显手册,True,True,True,True,规则命中产品手册,2026-05-25T19:15:59,2026-06-04T22:51:56
+196,zh,耳机有哪些类型，以及如何更换耳塞？,VR头显,VR头显手册,expert,VR头显,VR头显手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:16:27,2026-06-04T22:52:33
+197,zh,为保持遮光罩的清晰度和功能性，正确的清洁步骤是什么？,VR头显,VR头显手册,expert,VR头显,VR头显手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:16:42,2026-06-04T22:52:45
+198,zh,为确保安全且最佳的使用效果，游玩区域的推荐尺寸是多少？,VR头显,VR头显手册,expert,VR头显,VR头显手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:17:04,2026-06-04T22:53:15
+199,zh,使用和操作VR头显时应采取哪些安全预防措施，以确保用户安全和设备使用寿命？,VR头显,VR头显手册,expert,VR头显,VR头显手册,True,True,True,True,规则命中产品手册,2026-05-25T19:17:22,2026-06-04T22:53:17
+200,zh,功能键盘的保修政策通常包含哪些内容，又不包含哪些内容？,功能键盘,功能键盘手册,expert,功能键盘,功能键盘手册,True,True,True,True,规则命中产品手册,2026-05-25T19:21:57,2026-06-04T22:53:23
+201,zh,功能键盘的保修政策中，损害赔偿的除外责任或免责声明通常是什么？,功能键盘,功能键盘手册,expert,功能键盘,功能键盘手册,True,True,True,True,规则命中产品手册,2026-05-25T19:22:21,2026-06-04T22:53:59
+202,zh,如何设置功能键盘？,功能键盘,功能键盘手册,expert,功能键盘,功能键盘手册,True,True,True,True,规则命中产品手册,2026-05-25T19:23:01,2026-06-05T01:23:25
+203,zh,如何拆卸和重新安装功能键盘的轴体？,功能键盘,功能键盘手册,expert,功能键盘,功能键盘手册,True,True,True,True,规则命中产品手册,2026-05-25T19:23:41,2026-06-05T01:37:52
+204,zh,如何将功能键盘搭配CAM软件使用？,功能键盘,功能键盘手册,expert,功能键盘,功能键盘手册,True,True,True,True,规则命中产品手册,2026-05-25T19:24:26,2026-06-04T22:57:11
+205,zh,如何在硬件模式下使用功能键盘？,功能键盘,功能键盘手册,expert,功能键盘,功能键盘手册,True,True,True,True,规则命中产品手册,2026-05-25T19:25:14,2026-06-05T01:05:55
+206,zh,如何安装儿童电动摩托车的挡泥板？,儿童电动摩托车,儿童电动摩托车手册,expert,儿童电动摩托车,儿童电动摩托车手册,True,True,True,True,规则命中产品手册,2026-05-25T19:31:07,2026-06-04T23:02:53
+207,zh,如何安装儿童电动摩托车的前轮？,儿童电动摩托车,儿童电动摩托车手册,expert,儿童电动摩托车,儿童电动摩托车手册,True,True,True,True,规则命中产品手册,2026-05-25T19:31:23,2026-06-04T23:03:59
+208,zh,如何为蓝牙激光鼠标安装电池？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:34:47,2026-06-04T23:04:24
+209,zh,如何为蓝牙激光鼠标安装WIDCOMM蓝牙驱动程序？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:35:04,2026-06-04T23:05:33
+210,zh,如何为蓝牙激光鼠标卸载WIDCOMM蓝牙驱动程序？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:35:14,2026-06-04T23:07:30
+211,zh,如何在Windows系统中为蓝牙激光鼠标设置快速配对？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:35:26,2026-06-04T23:08:18
+212,zh,如何通过WIDCOMM蓝牙驱动程序为蓝牙激光鼠标设置配对？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:35:45,2026-06-04T23:08:51
+213,zh,如何查看蓝牙激光鼠标的电量状态？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:36:28,2026-06-04T23:10:05
+214,zh,如何首次为蓝牙激光鼠标使用该驱动程序？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:36:41,2026-06-04T23:10:22
+215,zh,如何将蓝牙激光鼠标与其他人机接口设备相连接？,蓝牙激光鼠标,蓝牙激光鼠标手册,expert,蓝牙激光鼠标,蓝牙激光鼠标手册,True,True,True,True,规则命中产品手册,2026-05-25T19:37:01,2026-06-04T23:11:07
+216,zh,如何拆卸烤箱门？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:45:03,2026-06-04T23:11:24
+217,zh,如何安装烤箱门？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:45:14,2026-06-04T23:11:26
+218,zh,如何移动烤箱的顶部加热元件（仅限部分型号）？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:45:25,2026-06-04T23:12:21
+219,zh,如何更换烤箱的后部灯（如有）？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:45:39,2026-06-04T23:12:37
+220,zh,如何使用烤箱的接油盘？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:45:53,2026-06-04T23:13:27
+221,zh,如何清洁烤箱外部？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:46:04,2026-06-04T23:13:31
+222,zh,如何使用烤箱的烤架？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:46:26,2026-06-04T23:13:32
+223,zh,烤箱的催化侧面板有什么作用？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:46:40,2026-06-04T23:14:46
+224,zh,如何使用烤箱的烤盘？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:46:58,2026-06-04T23:14:46
+225,zh,如何使用烤箱的烤架烤盘套装？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:47:12,2026-06-04T23:14:59
+226,zh,如何使用烤箱的油脂过滤器？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:47:22,2026-06-04T23:16:08
+227,zh,如何使用烤箱的滑动搁架？,烤箱,烤箱手册,expert,烤箱,烤箱手册,True,True,True,True,规则命中产品手册,2026-05-25T19:47:34,2026-06-04T23:17:15
+228,zh,如何为混合即时相机安装肩带？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:47:47,2026-06-04T23:17:47
+229,zh,如何为混合即时相机装入电池？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:47:59,2026-06-04T23:18:06
+230,zh,如何为混合即时相机装入相纸盒？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:48:14,2026-06-04T23:18:36
+231,zh,如何为混合即时相机取出用完的相纸盒？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:48:25,2026-06-04T23:19:07
+232,zh,如何设置混合即时相机的自动打印模式？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:48:34,2026-06-04T23:19:27
+233,zh,如何设置混合即时相机的手动打印模式（初始设置）？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:48:49,2026-06-04T23:19:51
+234,zh,如何使用混合即时相机拍摄照片？,相机,相机手册,expert,相机,相机手册,True,True,True,True,规则命中产品手册,2026-05-25T19:49:00,2026-06-04T23:20:38
+241,en,"If this is the first time to use airfryer, What should I do before first use?",Airfryer,英文汇总手册,expert,Airfryer,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:49:10,2026-06-04T23:20:43
+242,en,How to find the approval label of emission control certificate of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:49:20,2026-06-04T23:21:28
+243,en,How do I use the battery conversion feature before sailing?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:49:47,2026-06-04T23:21:52
+244,en,How the ship steers?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,False,True,False,全局RAG候选片段辅助命中产品手册,2026-05-25T19:50:06,2026-06-04T23:22:23
+245,en,What should I do if face over temperature warning on the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:50:17,2026-06-04T23:22:37
+246,en,"If I want to listen to music on my phone, how do I turn on the sound system?",Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:50:37,2026-06-04T23:22:56
+247,en,How do I use the storage compartments if I want to store wet items while on board?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:50:57,2026-06-04T23:23:38
+248,en,How to open the battery compartment when manipulating the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:51:07,2026-06-04T23:23:51
+249,en,How to install an anchor light while the boat is moving?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:51:27,2026-06-04T23:23:54
+250,en,How do I use the jet wash function to clean the boat after using it?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:51:46,2026-06-04T23:23:56
+251,en,How do I turn on or off the water supply button on my boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:52:04,2026-06-04T23:24:33
+252,en,How to remove the bimini top of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:52:40,2026-06-04T23:25:40
+253,en,How do I install a bimini top on my boat if I want to use the canopy?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:52:58,2026-06-04T23:25:43
+254,en,How to store the bimini top in the upright position of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:53:07,2026-06-04T23:25:58
+255,en,"When I am sailing, how do I check the engine oil level to ensure continued sailing?",2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:53:27,2026-06-04T23:26:16
+256,en,How can I use the bilge pump of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:53:41,2026-06-04T23:26:28
+257,en,How to perform anchor light switch check while sailing?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:54:01,2026-06-04T23:26:52
+258,en,"When I want to start the boat, how do I turn on the boat's engine to get the machine started?",2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:54:11,2026-06-04T23:26:46
+259,en,How do I turn a boat while sailing?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:54:23,2026-06-04T23:27:02
+260,en,How to operate the boat cross wakes and swells?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:54:35,2026-06-04T23:27:06
+261,en,How do I load the boat when the cruise is over?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:54:50,2026-06-04T23:27:30
+262,en,How to flush the cooling system of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:55:02,2026-06-04T23:27:35
+263,en,How to replace the fuse of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:55:20,2026-06-04T23:27:49
+264,en,How to check the engine oil level of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:55:36,2026-06-04T23:27:49
+265,en,How to use the energy saving mode of a coffee machine?,Espresso,英文汇总手册,expert,Espresso,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:55:56,2026-06-04T23:28:12
+266,en,How to change the default setting of the energy saving mode?,Espresso,英文汇总手册,expert,Espresso,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:56:08,2026-06-04T23:28:13
+267,en,How to program the water valume of a coffee machine?,Espresso,英文汇总手册,expert,Espresso,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:56:24,2026-06-04T23:28:36
+268,en,"How should I do if I want to empty the system before not in use, for frost protection or before maintenance?",Espresso,英文汇总手册,expert,Espresso,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:56:41,2026-06-04T23:29:13
+269,en,How should I do if I want to reset to factory settings of the coffee machine?,Espresso,英文汇总手册,expert,Espresso,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:56:52,2026-06-04T23:29:38
+270,en,How should I clean my coffee maker after I use it so that it can last longer?,Espresso,英文汇总手册,expert,Espresso,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:57:04,2026-06-04T23:29:40
+271,en,How to open the swim platform of the boat\uff1f,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:57:22,2026-06-04T23:29:45
+272,en,How to open the livewell and add water on the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:57:36,2026-06-04T23:30:15
+273,en,What is the maintenance setting screen of the boat controller?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:57:49,2026-06-04T23:30:31
+274,en,"In the boat's steering position, what does the factory reset screen show?",2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:57:59,2026-06-04T23:31:01
+275,en,What is the trip screen shown?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T19:58:21,2026-06-04T23:31:22
+276,en,"When I am ready to sail, if everything is ready, how do I make the boat move forward?",2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:58:36,2026-06-04T23:31:25
+277,en,How do I check the boat's steering system when I'm driving it?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:58:55,2026-06-04T23:31:42
+278,en,How should fire extinguishers be stored on board and where should they be placed?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:59:09,2026-06-04T23:32:14
+279,en,How to care the throttle-cable of the boat?,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,expert,2021 Boat 210FSH SPORT 210FSH DELUXE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T19:59:21,2026-06-04T23:32:38
+280,en,How do I charge the camera battery when I'm not using it?,相机,相机手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,False,False,False,全局RAG候选片段辅助命中产品手册,2026-05-25T19:59:45,2026-06-04T23:33:07
+281,en,How to install the camera battery when another one is power off?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:00:09,2026-06-04T23:33:18
+282,en,How do I connect the camera using a household power socket?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:00:38,2026-06-04T23:33:33
+283,en,How do you mount the lens of a camera when preparing for photography?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:00:50,2026-06-04T23:33:33
+284,en,How do you install the card into a camera before photography?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:01:24,2026-06-04T23:34:03
+285,en,Have you ever wondered how to remove the camera shutter button? Understanding this process can enhance your photography experience and allow for quick repairs!,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:01:35,2026-06-04T23:33:57
+286,en,How do I replace the camera's date/time battery?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:01:53,2026-06-04T23:34:22
+287,en,How to set an off-center subject mode of a camera?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:02:11,2026-06-04T23:34:43
+288,en,"Before taking photos, we need to know How to use the eyepiece cover of the camera?","Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:02:25,2026-06-04T23:34:37
+289,en,How do I select the AF Mode when before taking a picture?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:02:37,2026-06-04T23:34:39
+290,en,"How to set the camera model to \""P\"" model?",相机,相机手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,False,False,False,全局RAG候选片段辅助命中产品手册,2026-05-25T20:03:03,2026-06-04T23:35:25
+291,en,"After or during shooting, how can I view the camera image on TV for better clarity?","Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:03:22,2026-06-04T23:35:36
+292,en,How can I delete a single image from my camera if I don't like the photo?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:03:41,2026-06-04T23:35:50
+293,en,How can I erase all images from my camera if I don't like these.,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:03:59,2026-06-04T23:35:53
+294,en,How do I print photos using the camera's CP direct method after taking them?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:04:16,2026-06-04T23:36:30
+295,en,How do you set up the camera to fine tune the model when using it?,Camera Installation Guide,英文汇总手册,expert,Camera Installation Guide,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:04:45,2026-06-04T23:36:38
+296,en,"After the earphones is in my hand, what are the components I should have?",Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:05:03,2026-06-04T23:36:51
+297,en,"If the case battery of earphones is low, how can I charge is?",Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:05:13,2026-06-04T23:37:12
+298,en,"When bluetooth are pairing and connecting, what scenarios I might encounter?",Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:05:30,2026-06-04T23:37:29
+299,en,What are the two main controling functions of earphones?,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:05:40,2026-06-04T23:37:48
+300,en,"Besides the two main controling functions, what other functions of the earphones can I operate?",Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:05:58,2026-06-04T23:38:07
+301,en,"If my earphones won't work, how can I reset them?",Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:06:10,2026-06-04T23:38:10
+302,en,What are the maintenance and care policies of the earphones?,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,expert,Active Noise Canceling Truly Wireless Earphones,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:06:20,2026-06-04T23:38:11
+303,en,"From three different observing views, what buttons and interfaces should this eReader have?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:06:42,2026-06-04T23:38:40
+304,en,What do the functions of Main Menu and Browser History of the eReader can do?,E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:07:03,2026-06-04T23:38:51
+305,en,"When in eBook mode of this eReader, what will happen after pressing \""M\"" botton?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:07:18,2026-06-04T23:38:55
+306,en,"If I want to listen to music using this eReader, what should I do?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:08:01,2026-06-04T23:39:26
+307,en,"Can this eReader record voice? If so, how do I operate this feature?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:08:12,2026-06-04T23:41:04
+308,en,"I can't find the way to play video using this eReader, can you tell me how to do that?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:08:26,2026-06-04T23:41:44
+309,en,"Can this eReader become a photo viewer? If so, how do I operate this feature?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:08:43,2026-06-04T23:43:08
+310,en,"When using this eReader, what kinds of trobles might I encounter and how to solve them?",E Reader,英文汇总手册,expert,E Reader,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:08:55,2026-06-04T23:43:13
+311,en,"When connecting the fax, hwo can I properly finish the procedure?",MFC-J6955DW,英文汇总手册,expert,MFC-J6955DW,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:09:09,2026-06-04T23:43:35
+312,en,What should I pay attention to in order to ensure my safety when using this fax?,MFC-J6955DW,英文汇总手册,expert,MFC-J6955DW,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:09:19,2026-06-04T23:44:03
+313,en,"In order to keep your fingers safe, what should you pay attention to about the fax?",MFC-J6955DW,英文汇总手册,expert,MFC-J6955DW,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:09:35,2026-06-04T23:44:10
+314,en,I'm about to move this fax. Is there anything I should pay attention to?,MFC-J6955DW,英文汇总手册,expert,MFC-J6955DW,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:09:53,2026-06-04T23:44:22
+315,en,"Are caution or warning labels inside the fax important? If not, can I remove them?",MFC-J6955DW,英文汇总手册,expert,MFC-J6955DW,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:10:02,2026-06-04T23:44:45
+316,en,"If I'm in Canada, is there any statement of the fax vailable in my country?",MFC-J6955DW,英文汇总手册,expert,MFC-J6955DW,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:10:12,2026-06-04T23:45:06
+317,en,"When using the grill, how to connect regulator to the LP Tank?",Grill,英文汇总手册,expert,Grill,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:10:23,2026-06-04T23:45:18
+318,en,"To engure my safety when using the grill, how to do leak testing on valves, hose and regulatol?",Grill,英文汇总手册,expert,Grill,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:10:40,2026-06-04T23:45:45
+319,en,What should I pay attention to on ablout indirect cooking using the grill?,Grill,英文汇总手册,expert,Grill,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:10:53,2026-06-04T23:45:53
+320,en,What are the first three steps in assembly process of the grill according to the manual?,Grill,英文汇总手册,expert,Grill,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:11:06,2026-06-04T23:45:58
+321,en,Can you share me some safety tips using the grill?,Grill,英文汇总手册,expert,Grill,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:11:20,2026-06-04T23:46:35
+322,en,What are identification numbers of my jetski? I don't understand that.,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:11:37,2026-06-04T23:46:36
+324,en,I've heard that my jetski has cruising limitations. Please introduce them.,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:12:05,2026-06-04T23:47:26
+325,en,What are the operation requirements if I want to use my jetski?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:12:19,2026-06-04T23:47:26
+326,en,What kinds of watercraft characteristics does my jetski have?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:12:29,2026-06-04T23:47:54
+327,en,"When encountering vessels driving my jetski, what rules should I obey?",2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:12:45,2026-06-04T23:47:58
+328,en,"I'd like to remove and install the seat of my jetski, what steps should I follow?",2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:13:00,2026-06-04T23:48:00
+329,en,"In daily usage, how to open and close the hood of the jetski?",2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:13:11,2026-06-04T23:48:06
+330,en,I've noticed that there are two different kinds of filler caps on the jetski. How to remove them?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:13:22,2026-06-04T23:48:35
+331,en,"If I need to manipulate the two kinds of engine switches on the jetski, what should I do?",2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:13:40,2026-06-04T23:48:49
+332,en,"There are two kinds of levers on the jetski, how to manipulate them?",2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:13:59,2026-06-04T23:49:04
+333,en,What information should I obtain about Quick Shift Trim System (QSTS) selector when using my jetski,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:14:17,2026-06-04T23:49:23
+334,en,What do fuel meter and hour meter on my jetski do?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:14:28,2026-06-04T23:49:25
+344,en,Inspecting fuel filter and fuel tank of my jetski is important. How to do that?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:14:45,2026-06-04T23:49:56
+345,en,How to adjust the adjustable sponson of my jetski if needed?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:14:56,2026-06-04T23:50:03
+346,en,The intake and impeller of my jetski are dirty. How to clean them?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:15:07,2026-06-04T23:50:08
+347,en,How to start my jetski in different situations?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:15:20,2026-06-04T23:50:35
+348,en,What are basic steps to board my jetski with a passenger in deep water?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:15:40,2026-06-04T23:50:58
+349,en,"If it is difficult to balance the jetski at a stand still, what should I do?",2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:15:52,2026-06-04T23:51:04
+350,en,What is the max load of the jetski?,2005 WaveRunner,英文汇总手册,expert,2005 WaveRunner,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:16:01,2026-06-04T23:51:46
+351,en,What is the overview of the base station of a landline?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:16:22,2026-06-04T23:51:56
+352,en,How can you connect the base station of a landline?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:16:37,2026-06-04T23:51:59
+353,en,How can you install the handset of a landline?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:16:45,2026-06-04T23:52:10
+354,en,How can you check the battery level of a landline?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:17:02,2026-06-04T23:52:35
+355,en,What can you do if your landline is in searching status?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:17:16,2026-06-04T23:53:12
+356,en,How can you know about the current status with different LED indicator behavior on a landline?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:17:41,2026-06-04T23:53:33
+357,en,How can you know about the current status with different LED indicator behavior on the base station of a landline?,XL490 XL495,英文汇总手册,expert,XL490 XL495,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:18:00,2026-06-04T23:53:43
+358,en,How can you lower the roll bar of a lawn mower?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:18:12,2026-06-04T23:54:03
+359,en,How can you adjust the rear-shock assemblies for a lawn mower with suspension system only?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:18:26,2026-06-04T23:54:28
+360,en,How can you adjust the height of cut for a lawn mower with an electric deck lift?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:18:43,2026-06-04T23:54:37
+361,en,How can you load a lawn mower?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:18:56,2026-06-04T23:54:46
+362,en,How can you unload a lawn mower?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:19:05,2026-06-04T23:54:50
+363,en,How can you change the engine oil of a lawn mower?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:19:20,2026-06-04T23:56:00
+364,en,How can you remove the filters of a lawn mower?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:19:32,2026-06-04T23:56:18
+365,en,How can you replace the mower belt of a lawn mower?,Riding lawn mower,英文汇总手册,expert,Riding lawn mower,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:19:45,2026-06-04T23:56:43
+366,en,How can you set up control of a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:19:56,2026-06-04T23:56:59
+367,en,How can you set the light timer of a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:20:06,2026-06-04T23:57:15
+368,en,How can you set yout favorite recipe with a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:20:17,2026-06-04T23:58:13
+369,en,How can you reheat food with a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:20:35,2026-06-04T23:58:22
+370,en,How can you use auto defrost of a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:20:46,2026-06-04T23:58:27
+371,en,How can you clean the grease filter of a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:21:01,2026-06-04T23:58:31
+372,en,How can you replace the charcoal filter of a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:21:12,2026-06-04T23:59:14
+373,en,How can you replace the oven light of a over-the-range microwave?,Over-the-Range Microwave,英文汇总手册,expert,Over-the-Range Microwave,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:21:24,2026-06-04T23:59:45
+374,en,How can you set the PCI Express 3.0 x16 slots of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:21:37,2026-06-04T23:59:54
+375,en,How can you set the jumpers of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:21:51,2026-06-05T00:00:43
+376,en,How can you set the rear panel connectors of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:22:02,2026-06-05T00:00:47
+377,en,How can you set the onboard LED of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:22:39,2026-06-05T00:01:34
+378,en,How can you update the BIOS file of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:22:58,2026-06-05T00:01:36
+379,en,How can you create RAID of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:23:17,2026-06-05T00:01:41
+380,en,How can you use SATA ODD & USB devices to install an operating system for a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:23:37,2026-06-05T00:02:22
+381,en,How can you secure the motherboard to the chassis?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:23:45,2026-06-05T00:02:45
+382,en,How can you prepare the installation of Central Processing Unit (CPU) for a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:24:04,2026-06-05T00:03:09
+383,en,How do you know about system memory of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:24:20,2026-06-05T00:03:11
+384,en,How do you know about Serial port connector (10-1 pin COM) of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:24:29,2026-06-05T00:03:24
+385,en,How do you know about TPM connector (14-1 pin TPM) for a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:24:37,2026-06-05T00:03:40
+386,en,How do you know about Thermal sensor connector (2-pin T_SENSOR) of a motherboard?,Motherboard,英文汇总手册,expert,Motherboard,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:24:48,2026-06-05T00:03:55
+387,en,How can you set quick release for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:25:07,2026-06-05T00:04:17
+388,en,How can you set pressure cooking lid for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:25:24,2026-06-05T00:04:53
+389,en,How can you set float valve for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:25:34,2026-06-05T00:05:15
+390,en,What do you know about anti-block shield for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:25:47,2026-06-05T00:05:26
+391,en,How can you set steam release valve for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:00,2026-06-05T00:05:47
+392,en,How can you set anti-block shield for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:08,2026-06-05T00:06:05
+393,en,How can you set silicone cap and float valve for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:17,2026-06-05T00:06:06
+394,en,How can you Install the condensation collector for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:27,2026-06-05T00:06:20
+395,en,How can you install the sealing ring for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:39,2026-06-05T00:06:28
+396,en,How can you remove silicone sealing ring for a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:48,2026-06-05T00:06:45
+397,en,What do you know about sealing ring of a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:26:59,2026-06-05T00:06:53
+398,en,What do you know about steam release valve of a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:27:19,2026-06-05T00:06:54
+399,en,What do you know about quick release button of a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:27:38,2026-06-05T00:07:06
+400,en,What can you know about natural release(NRorNPR) of a multi-use pressure cooker and air fryer?,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,expert,MULTI-USE PRESSURE COOKER AND AIR FRYER-5.7AND8LITRE,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:27:51,2026-06-05T00:07:09
+401,en,What is the robot anatomy of the vacuum?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:28:06,2026-06-05T00:07:25
+402,en,What are the two primary modes available on a vacuum cleaner that can be used to tailor its performance to meet different home cleaning needs?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:28:15,2026-06-05T00:07:49
+403,en,What is the proper procedure for emptying the vacuum cleaner's bin?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:28:24,2026-06-05T00:08:19
+404,en,What is the correct procedure for cleaning the vacuum cleaner filter?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:28:33,2026-06-05T00:08:27
+405,en,What is the proper procedure for cleaning the full bin sensors on a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:28:42,2026-06-05T00:08:37
+406,en,What is the correct procedure for cleaning the extractors (brushes or rollers) on a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:28:58,2026-06-05T00:09:05
+407,en,What is the proper procedure for cleaning the sensors and charging contacts on a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:29:09,2026-06-05T00:09:23
+408,en,What is the correct procedure for positioning the home base of a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:29:17,2026-06-05T00:09:31
+409,en,What is the proper procedure for cleaning the front caster wheel of a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:29:25,2026-06-05T00:09:39
+410,en,What is the correct procedure for cleaning the side brush of a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:29:35,2026-06-05T00:10:05
+411,en,What is the function of the dual-mode virtual wall barrier on a vacuum cleaner?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:29:46,2026-06-05T00:10:10
+412,en,What are the troubleshooting steps if the vacuum indicates a problem?,VACUUM,英文汇总手册,expert,VACUUM,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:29:59,2026-06-05T00:10:15
+413,en,What are the detailed instructions for T-rail mounting of a camera or equipment?,Camera Installation Guide,英文汇总手册,expert,Camera Installation Guide,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:30:23,2026-06-05T00:10:45
+414,en,What are the steps to power the camera?,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,expert,"Digital, single-lens reflex, AF/AE camera",英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:30:46,2026-06-05T00:10:58
+415,en,What is the proper way to use the brake lever and brake button?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:31:04,2026-06-05T00:11:25
+416,en,What are the essential preparation checks to perform before using a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:31:22,2026-06-05T00:11:44
+417,en,What are the detailed steps to start the engine of a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:31:36,2026-06-05T00:11:47
+418,en,What is a V-BeltHolder?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:31:47,2026-06-05T00:12:04
+419,en,What are the steps to adjust the throttle cable on a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:32:05,2026-06-05T00:12:28
+420,en,What is the proper way to use the steering system on a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:32:15,2026-06-05T00:12:38
+421,en,What are the correct steps to turn using a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:32:25,2026-06-05T00:12:40
+422,en,What are the proper techniques for riding uphill on a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:32:36,2026-06-05T00:13:11
+423,en,What are the proper techniques for riding downhill on a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:32:45,2026-06-05T00:13:11
+424,en,What are the correct techniques for crossing a slope on a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:32:55,2026-06-05T00:13:29
+425,en,What are the steps to inspect the spark plug on a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:33:11,2026-06-05T00:13:34
+426,en,What are the steps to clean a snowmobile?,Snowmobile,英文汇总手册,expert,Snowmobile,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:33:20,2026-06-05T00:13:39
+427,en,What are the best methods for memorizing communication channels using a manual program?,Color Television,英文汇总手册,expert,Color Television,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:33:40,2026-06-05T00:14:02
+428,en,What are the common causes and conditions that can lead to poor reception in television or radio signals?,Color Television,英文汇总手册,expert,Color Television,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:33:53,2026-06-05T00:14:11
+429,en,What are the steps to enable and customize captions and on-screen text settings on a television?,Color Television,英文汇总手册,expert,Color Television,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:34:03,2026-06-05T00:14:11
+430,en,What are the steps to properly connect and set up an outdoor antenna for optimal signal reception?,Color Television,英文汇总手册,expert,Color Television,英文汇总手册,True,True,True,True,全局RAG候选片段辅助命中产品手册,2026-05-25T20:34:18,2026-06-05T00:14:34
+431,en,What are the steps to properly connect a DVD player to a television or audio system for optimal performance?,Color Television,英文汇总手册,expert,Color Television,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:34:36,2026-06-05T00:14:37
+432,en,What are the key factors to check when troubleshooting technical issues or malfunctions?,E Reader,英文汇总手册,customer,,,False,False,False,False,规则和global_rag模式均未命中产品手册，走通用客服,2026-05-25T20:35:01,2026-06-05T00:15:05
+433,en,What safety precautions should be followed to ensure safe operation during this process?,烤箱,烤箱手册,customer,,,False,False,False,False,规则和global_rag模式均未命中产品手册，走通用客服,2026-05-25T20:35:33,2026-06-05T00:15:21
+434,en,How do you adjust the intensity settings on an electric toothbrush to suit your oral care needs?,Toothbrush,英文汇总手册,expert,Toothbrush,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:35:43,2026-06-05T00:15:16
+435,en,What are the steps to activate and deactivate the various features on an electric toothbrush for customized usage?,Toothbrush,英文汇总手册,expert,Toothbrush,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:35:58,2026-06-05T00:15:39
+436,en,"What are the steps to charge an electric toothbrush when it is inside a travel case, and how do you ensure it charges properly?",Toothbrush,英文汇总手册,expert,Toothbrush,英文汇总手册,True,True,True,True,规则命中产品手册,2026-05-25T20:36:13,2026-06-05T00:15:40
